@@ -22,8 +22,8 @@ public class Lab1 {
         for (int i = 0; i< semaphores.length; i++) {
             semaphores[i] = new Semaphore(1);   //Binary semaphore
         }
-        Thread train1 = new Train(1,speed1, 16, 3, Direction.SOUTH);
-        Thread train2 = new Train(2,speed2, 16, 11, Direction.NORTH);
+        Thread train1 = new Train(1,speed1);
+        Thread train2 = new Train(2,speed2);
         train1.start();
         train2.start();
 
@@ -46,11 +46,9 @@ public class Lab1 {
         int latestY;
         Direction direction;
 
-        private Train(Integer id, Integer speed, int x, int y, Direction direction) {
+        private Train(Integer id, Integer speed) {
             this.id = id;
             this.speed = speed;
-            this.direction = direction;
-            latestY = y;
             tsi = TSimInterface.getInstance();
 
         }
@@ -59,7 +57,17 @@ public class Lab1 {
         public void run() {
             try {
                 //Sätt tågen i rullning
+                //TODO Hårdkodat, ändra sen kanske
                 tsi.setSpeed(id, speed);
+                //Start clauses
+                if(id == 1){
+                    latestY = 3;
+                    direction = Direction.SOUTH;
+                } else {
+                    latestY = 11;
+                    direction = Direction.NORTH;
+                    semaphores[5].acquire();
+                }
 
                 while(true){
                    sensor = tsi.getSensor(id);
