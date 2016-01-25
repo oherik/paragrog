@@ -53,9 +53,6 @@ public class Lab1 {
             latestY = y;
             tsi = TSimInterface.getInstance();
 
-
-
-
         }
 
         @Override
@@ -90,7 +87,8 @@ public class Lab1 {
                                         }
                                     } else {
                                        semaphores[4].release();
-                                       tsi.setSpeed(id, Math.min(1000, 1000 * Math.abs(speed)));
+                                       tsi.setSpeed(id, 0);
+                                       wait(Math.min(1000, 1000 * Math.abs(speed)));
                                        tsi.setSpeed(id, -speed);
                                        direction = Direction.opposite(direction);
 
