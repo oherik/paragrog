@@ -110,7 +110,7 @@ R 17 3 1 HorizontalRail NoSensor
 R 17 5 1 HorizontalRail NoSensor
 R 17 7 2 DownRightRail HorizontalRail NoSensor
 R 17 8 1 UpLeftRail NoSensor
-R 17 9 1 HorizontalRail Sensor
+R 17 9 1 HorizontalRail NoSensor
 R 17 11 1 HorizontalRail NoSensor
 R 17 13 1 HorizontalRail NoSensor
 R 18 3 1 RightStopRail NoSensor

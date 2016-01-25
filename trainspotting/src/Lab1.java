@@ -61,7 +61,7 @@ public class Lab1 {
                     System.out.println(sensor);
                     if(sensor.getStatus() == SensorEvent.ACTIVE){         //Active sensor
                         switch (sensor.getYpos()) {
-                                case (11):case(13):                       // The lower two signals
+                                case(11): case(13):                       // The lower two signals
                                    if(direction == Direction.NORTH){
                                        while(!semaphores[4].tryAcquire()){
                                             tsi.setSpeed(id,0);
@@ -86,11 +86,46 @@ public class Lab1 {
                                        direction = Direction.opposite(direction);
                                    }
                                     break;
+                            case(10): case(9):                          // The second lowest two signal
+                                if(direction == Direction.NORTH){
+                                    semaphores[4].release();
+                                    while(!semaphores[2].tryAcquire()){
+                                        System.out.println("amen");
+                                        tsi.setSpeed(id,0);
+                                    }
+                                    if(sensor.getYpos() == 10) {
+                                        tsi.setSwitch(15, 9, tsi.SWITCH_LEFT);
+                                    }else{
+                                        tsi.setSwitch(15, 9, tsi.SWITCH_RIGHT);
+                                    }
+                                    tsi.setSpeed(id, speed);
+                                    if(semaphores[1].tryAcquire()){
+                                        tsi.setSwitch(17,7,tsi.SWITCH_LEFT);
+                                    } else {
+                                        tsi.setSwitch(17,7,tsi.SWITCH_RIGHT);
+                                    }
+                                } else {
+                                    semaphores[2].release();
+                                    while(!semaphores[4].tryAcquire()){
+                                        tsi.setSpeed(id,0);
+                                    }
+                                    if(sensor.getYpos() == 10) {
+                                        tsi.setSwitch(4, 9, tsi.SWITCH_LEFT);
+                                    }else{
+                                        tsi.setSwitch(4, 9, tsi.SWITCH_RIGHT);
+                                    }
+                                    tsi.setSpeed(id, speed);
+                                    if(semaphores[5].tryAcquire()){
+                                        tsi.setSwitch(3, 11, tsi.SWITCH_LEFT);
+                                    } else {
+                                        tsi.setSwitch(3, 11, tsi.SWITCH_RIGHT);
+                                    }
+                                }
+                                break;
 
-
-                            }
-                        }
-                }
+                            }   // End switch
+                        }   //End sensor active
+                }   //End while(true)
 
             } catch (CommandException e) {
                 e.printStackTrace();    // or only e.getMessage() for the error
