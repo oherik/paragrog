@@ -1,23 +1,11 @@
 import TSim.*;
-import sun.management.Sensor;
 
-import java.awt.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 public class Lab1 {
     static Semaphore[] semaphores;
     public Lab1(Integer speed1, Integer speed2) {
 
-        //Train trains = new Train();
-        //Thread train1 = new Thread(trains, "1");
-        //Thread train2 = new Thread(trains, "2");
-        //Create and start the trains
         semaphores = new Semaphore[6];
         for (int i = 0; i< semaphores.length; i++) {
             semaphores[i] = new Semaphore(1);   //Binary semaphore
@@ -56,10 +44,9 @@ public class Lab1 {
         @Override
         public void run() {
             try {
-                //Sätt tågen i rullning
-                //TODO Hårdkodat, ändra sen kanske
                 tsi.setSpeed(id, speed);
                 //Start clauses
+                //TODO Hårdkodat, ändra sen kanske
                 if(id == 1){
                     latestY = 3;
                     direction = Direction.SOUTH;
@@ -72,12 +59,10 @@ public class Lab1 {
                 while(true){
                    sensor = tsi.getSensor(id);
                     System.out.println(sensor);
-                    if(sensor.getStatus() == SensorEvent.ACTIVE){         //Aktiv sensor
-                        System.out.println("I status");
+                    if(sensor.getStatus() == SensorEvent.ACTIVE){         //Active sensor
                         switch (sensor.getYpos()) {
-                                case (11):case(13):
+                                case (11):case(13):                       // The lower two signals
                                    if(direction == Direction.NORTH){
-                                      //  System.out.println("I switch");
                                        while(!semaphores[4].tryAcquire()){
                                             tsi.setSpeed(id,0);
                                         }
@@ -99,7 +84,6 @@ public class Lab1 {
                                        wait(Math.min(1000, 1000 * Math.abs(speed)));
                                        tsi.setSpeed(id, -speed);
                                        direction = Direction.opposite(direction);
-
                                    }
                                     break;
 
