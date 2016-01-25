@@ -60,37 +60,63 @@ public class Lab1 {
                    sensor = tsi.getSensor(id);
                     System.out.println(sensor);
                     if(sensor.getStatus() == SensorEvent.ACTIVE){         //Active sensor
+
+                        /*
                         switch (sensor.getYpos()) {
-                                case(11): case(13):                       // The lower two signals
-                                   if(direction == Direction.NORTH){
-                                       while(!semaphores[4].tryAcquire()){
-                                            tsi.setSpeed(id,0);
-                                        }
-                                       if(sensor.getYpos() == 11) {
-                                           tsi.setSwitch(3, 11, tsi.SWITCH_LEFT);
-                                       }else{
-                                           tsi.setSwitch(3, 11, tsi.SWITCH_RIGHT);
-                                       }
-                                        tsi.setSpeed(id, speed);
-                                        semaphores[5].release();
-                                        if(semaphores[3].tryAcquire()){
-                                            tsi.setSwitch(4,9,tsi.SWITCH_LEFT);
-                                        } else {
-                                            tsi.setSwitch(4,9,tsi.SWITCH_RIGHT);
-                                        }
+                            case(3): case(5):
+                                if(direction == Direction.NORTH){
+                                    semaphores[0].release();
+                                    tsi.setSpeed(id, 0);
+                                    sleep(Math.min(1000, 1000 * Math.abs(speed)));
+                                    direction = Direction.opposite(direction);
+                                    speed = -speed;
+                                    tsi.setSpeed(id, speed);
+                                } else {
+                                    while(!semaphores[0].tryAcquire()){
+                                        tsi.setSpeed(id,0);
+                                    }
+                                    tsi.setSpeed(id, speed);
+                                }
+                                break;
+
+
+                            case(8): case(7):                          // The second upper two signal
+                                if(direction == Direction.NORTH) {
+                                    semaphores[2].release();
+                                    while (!semaphores[0].tryAcquire()) {
+                                        tsi.setSpeed(id, 0);
+                                    }
+                                }else {
+                                    semaphores[0].release();
+                                    while (!semaphores[2].tryAcquire()) {
+                                        semaphores[3].tryAcquire();
+                                        tsi.setSpeed(id, 0);
+                                    }
+                                    if(sensor.getYpos() == 8) {
+                                        semaphores[1].release();
+                                        tsi.setSwitch(17, 7, tsi.SWITCH_LEFT);
+                                    }else{
+                                        tsi.setSwitch(17, 7, tsi.SWITCH_RIGHT);
+                                    }
+                                    if(semaphores[3].tryAcquire()){
+                                        System.out.println("acq");
+                                        tsi.setSwitch(15, 9, tsi.SWITCH_RIGHT);
                                     } else {
-                                       semaphores[4].release();
-                                       tsi.setSpeed(id, 0);
-                                       wait(Math.min(1000, 1000 * Math.abs(speed)));
-                                       tsi.setSpeed(id, -speed);
-                                       direction = Direction.opposite(direction);
-                                   }
-                                    break;
+                                        System.out.println("upptagen");
+                                        tsi.setSwitch(15, 9, tsi.SWITCH_LEFT);
+                                    }
+
+                                }
+                                tsi.setSpeed(id, speed);
+
+
+                                break;
+
+
                             case(10): case(9):                          // The second lowest two signal
                                 if(direction == Direction.NORTH){
                                     semaphores[4].release();
                                     while(!semaphores[2].tryAcquire()){
-                                        System.out.println("amen");
                                         tsi.setSpeed(id,0);
                                     }
                                     if(sensor.getYpos() == 10) {
@@ -98,32 +124,68 @@ public class Lab1 {
                                     }else{
                                         tsi.setSwitch(15, 9, tsi.SWITCH_RIGHT);
                                     }
-                                    tsi.setSpeed(id, speed);
+
                                     if(semaphores[1].tryAcquire()){
                                         tsi.setSwitch(17,7,tsi.SWITCH_LEFT);
                                     } else {
                                         tsi.setSwitch(17,7,tsi.SWITCH_RIGHT);
                                     }
+
                                 } else {
                                     semaphores[2].release();
                                     while(!semaphores[4].tryAcquire()){
                                         tsi.setSpeed(id,0);
                                     }
                                     if(sensor.getYpos() == 10) {
-                                        tsi.setSwitch(4, 9, tsi.SWITCH_LEFT);
-                                    }else{
                                         tsi.setSwitch(4, 9, tsi.SWITCH_RIGHT);
+                                    }else{
+                                        tsi.setSwitch(4, 9, tsi.SWITCH_LEFT);
                                     }
-                                    tsi.setSpeed(id, speed);
                                     if(semaphores[5].tryAcquire()){
                                         tsi.setSwitch(3, 11, tsi.SWITCH_LEFT);
                                     } else {
                                         tsi.setSwitch(3, 11, tsi.SWITCH_RIGHT);
                                     }
                                 }
+
+                                if(sensor.getYpos()==9) {
+                                    System.out.println("releasad");
+                                    semaphores[3].release();
+                                }
+                                tsi.setSpeed(id, speed);
                                 break;
 
+
+
+                            case(11): case(13):                       // The lower two signals
+                                if(direction == Direction.SOUTH){
+                                    semaphores[4].release();
+
+                                }
+
+                                while(!semaphores[4].tryAcquire()){
+                                    tsi.setSpeed(id,0);
+                                }
+                                if(sensor.getYpos() == 11) {
+                                    semaphores[4].release();
+                                    tsi.setSwitch(3, 11, tsi.SWITCH_LEFT);
+                                }else{
+                                    tsi.setSwitch(3, 11, tsi.SWITCH_RIGHT);
+                                }
+
+                                if(semaphores[3].tryAcquire()){
+                                    tsi.setSwitch(4,9,tsi.SWITCH_LEFT);
+                                } else {
+                                    tsi.setSwitch(4,9,tsi.SWITCH_RIGHT);
+                                }
+                                tsi.setSpeed(id, speed);
+                                break;
+
+
+
+
                             }   // End switch
+                            */
                         }   //End sensor active
                 }   //End while(true)
 
@@ -135,6 +197,13 @@ public class Lab1 {
                 e.getStackTrace();
                 System.err.println("Thread got interrupted for train " + id);
             }
+
+        }
+        private void changeDirection() throws CommandException, InterruptedException{
+            tsi.setSpeed(id, 0);
+            sleep(Math.min(1000, 1000 * Math.abs(speed)));
+            speed = - speed;
+            direction = Direction.opposite(direction);
         }
 
     }
