@@ -40,7 +40,7 @@ public class Lab1 {
             this.id = id;
             this.speed = speed;
             tsi = TSimInterface.getInstance();
-            
+
         }
 
         @Override
