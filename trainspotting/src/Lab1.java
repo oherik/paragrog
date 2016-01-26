@@ -13,8 +13,8 @@ public class Lab1 {
         for (int i = 0; i< semaphores.length; i++) {
             semaphores[i] = new Semaphore(1);   //Binary semaphore
         }
-        Thread train1 = new Train(1,speed1, Direction.SOUTH);
-        Thread train2 = new Train(2,speed2, Direction.NORTH);
+        Thread train1 = new Train(1,speed1);
+        Thread train2 = new Train(2,speed2);
         train1.start();
         train2.start();
 
@@ -35,11 +35,11 @@ public class Lab1 {
         TSimInterface tsi;
         SensorEvent sensor;
         Direction direction;
+        int currentSection;
 
-        private Train(Integer id, Integer speed, Direction direction) {
+        private Train(Integer id, Integer speed) {
             this.id = id;
             this.speed = speed;
-            this.direction = direction;
             tsi = TSimInterface.getInstance();
 
         }
@@ -50,16 +50,23 @@ public class Lab1 {
                 tsi.setSpeed(id, speed);
                 //Start clauses
                 //TODO Hårdkodat, ändra sen kanske
+                if(id == 1){
+                    direction = Direction.SOUTH;
+                    currentSection = -1;
+                }
                 if(id == 2) {
+                    direction = Direction.NORTH;
+                    currentSection = 5;
                     semaphores[5].acquire();
+
                 }
 
                 while(true){
                    sensor = tsi.getSensor(id);
                     System.out.println(sensor);
                     if(sensor.getStatus() == SensorEvent.ACTIVE){         //Active sensor
-
                         switch (getIndexOfSensor(sensor.getXpos(), sensor.getYpos())) {
+                            
                             case 1:case 2:
                                 if(direction == Direction.NORTH) {
                                     changeDirection();
@@ -399,6 +406,7 @@ public class Lab1 {
                     }
             }
             return 0;
+
         }
 
 
@@ -413,7 +421,7 @@ public class Lab1 {
         int currentSensor;
 
 
-                    sensorCoordinates = new Point();
+            sensorCoordinates = new Point();
             sensors = new ArrayList<Point>(16);
             sensors.add(new Point(15,4));
             sensors.add(new Point(15,6));
