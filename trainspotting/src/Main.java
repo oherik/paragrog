@@ -25,7 +25,7 @@ public class Main {
 			p.waitFor();
 			
 		} catch (ArrayIndexOutOfBoundsException e) {
-			System.err.println("Main method expects 3-4 arguments: Lab1_mod.map <Train1Speed> <Train2Speed> [SimulatorSpeed]");
+			System.err.println("Main method expects 3-4 arguments: Lab1.map <Train1Speed> <Train2Speed> [SimulatorSpeed]");
 		} catch (IOException e) {
 			e.printStackTrace();
 		} catch (InterruptedException e) {
