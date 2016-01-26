@@ -1,5 +1,7 @@
 import TSim.*;
 
+import java.awt.*;
+import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
 public class Lab1 {
@@ -38,7 +40,7 @@ public class Lab1 {
             this.id = id;
             this.speed = speed;
             tsi = TSimInterface.getInstance();
-
+            
         }
 
         @Override
@@ -205,6 +207,35 @@ public class Lab1 {
         Erik's test methods
          */
         /*
+
+                Point sensorCoordinates;
+        ArrayList sensors;
+        int currentSensor;
+
+
+                    sensorCoordinates = new Point();
+            sensors = new ArrayList<Point>(16);
+            sensors.add(new Point(15,4));
+            sensors.add(new Point(15,6));
+            sensors.add(new Point(7,7));
+            sensors.add(new Point(8,6));
+            sensors.add(new Point(9,8));
+            sensors.add(new Point(9,7));
+            sensors.add(new Point(16,8));
+            sensors.add(new Point(16,7));
+            sensors.add(new Point(14,9));
+            sensors.add(new Point(14,11));
+            sensors.add(new Point(5,9));
+            sensors.add(new Point(5,10));
+            sensors.add(new Point(4,13));
+            sensors.add(new Point(4,11));
+            sensors.add(new Point(15,13));
+            sensors.add(new Point(15,11));
+
+            i while-loopen
+              sensorCoordinates.setLocation(sensor.getXpos(), sensor.getYpos());
+              currentSensor = sensors.indexOf(sensorCoordinates);
+              System.out.println(currentSensor);
 
 
          +   +    0, 1
