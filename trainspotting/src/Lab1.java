@@ -1,6 +1,8 @@
 import TSim.*;
 
 import java.awt.*;
+import java.awt.*;
+import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
 
 public class Lab1 {
@@ -398,6 +400,141 @@ public class Lab1 {
             }
             return 0;
         }
+
+
+
+        /*
+        Erik's test methods
+         */
+        /*
+
+                Point sensorCoordinates;
+        ArrayList sensors;
+        int currentSensor;
+
+
+                    sensorCoordinates = new Point();
+            sensors = new ArrayList<Point>(16);
+            sensors.add(new Point(15,4));
+            sensors.add(new Point(15,6));
+            sensors.add(new Point(7,7));
+            sensors.add(new Point(8,6));
+            sensors.add(new Point(9,8));
+            sensors.add(new Point(9,7));
+            sensors.add(new Point(16,8));
+            sensors.add(new Point(16,7));
+            sensors.add(new Point(14,9));
+            sensors.add(new Point(14,11));
+            sensors.add(new Point(5,9));
+            sensors.add(new Point(5,10));
+            sensors.add(new Point(4,13));
+            sensors.add(new Point(4,11));
+            sensors.add(new Point(15,13));
+            sensors.add(new Point(15,11));
+
+            i while-loopen
+              sensorCoordinates.setLocation(sensor.getXpos(), sensor.getYpos());
+              currentSensor = sensors.indexOf(sensorCoordinates);
+              System.out.println(currentSensor);
+
+
+         +   +    0, 1
+         |   |              (Section -1)
+         |   |
+         +   +    2, 3
+          X X
+           X               Section 0
+          X X
+         +   +    4, 5
+         |   |             Section 1
+         |   |
+         +   +    6, 7
+          X X
+           X               Section 2
+          X X
+         +   +    8, 9
+         |   |             Section 3
+         |   |
+         +   +    10, 11
+          X X
+           X               Section 4
+          X X
+         +   +    12, 13
+         |   |             Section 5
+         |   |
+         +   +    14, 15
+
+        Lokala variabler:
+            Riktning
+            nuvarande sektion
+            hastighet
+            ID
+
+         Om NORR
+            Om sensor 0, 1
+                atStation();
+            Annars om sensor 2, 3, 6, 7, 10, 11
+                släppNuvarande()
+                nuvarande sektion = nuvarande sektion - 1
+            Annars
+                taNästa()
+                Om sensor 4, 8, 13          //Defaultväg
+                       släppNuvarande();
+                       Sätt relevant switch
+                Annars
+                        Sätt relevant switch
+                OM INTE 4, 5
+                    OM testaNästNästa()
+                         Sätt relevant switch
+                    Annars
+                        Sätt relevant switch
+
+         Om SÖDER
+            Om sensor 14, 15
+                atStation();
+            Annars om sensor 4, 5, 8, 9, 12, 13
+                släppNuvarande()
+                nuvarande sektion = nuvarande sektion + 1
+            Annars
+                taNästa()
+                Om sensor 6, 10          //Defaultväg
+                       släppNuvarande();
+                       Sätt relevant switch
+                Annars
+                        Sätt relevant switch
+                    OM testaNästNästa()
+                         Sätt relevant switch
+                    Annars
+                        Sätt relevant switch
+
+
+
+        Metoder:
+
+        atStation(){
+                Stanna
+                Vänta
+                Byt håll
+        }
+
+        testaNästNästa(){
+            index = NORR ? nuvarande sektion -2 : nuvarande sektion + 2;
+            return semafor[index].tryAcquire();
+        }
+
+        taNästa(){
+            index = NORR ? nuvarande sektion -1 : nuvarande sektion + 1;
+            semafor[index].acquire();
+                vänta
+        }
+        släppNuvarande(){
+            semafor[nuvarande sektion].release();
+        }
+
+
+
+
+         */
 
         private void changeDirection() throws CommandException, InterruptedException{
             tsi.setSpeed(id, 0);
