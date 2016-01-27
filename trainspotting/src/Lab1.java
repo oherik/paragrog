@@ -84,7 +84,7 @@ public class Lab1 {
                         case 9:case 10:
                             if(direction == Direction.NORTH) {
                                 driveThroughCriticalSection(2);
-                                if(index == 10) semaphores[3].release();
+                                if(index == 9) semaphores[3].release();
                                 setSwitch(15, 9 , index == 10);
                                 setSwitch(17, 7, semaphores[1].tryAcquire());
                             }else{
@@ -130,10 +130,9 @@ public class Lab1 {
             tsi.setSwitch(x, y, left ? tsi.SWITCH_LEFT : tsi.SWITCH_RIGHT);
         }
 
-        private void driveThroughCriticalSection(int semaphoreIndex) throws CommandException {
-            while(!semaphores[semaphoreIndex].tryAcquire()) {
-                tsi.setSpeed(id, 0);
-            }
+        private void driveThroughCriticalSection(int semaphoreIndex) throws CommandException, InterruptedException {
+            tsi.setSpeed(id, 0);
+            semaphores[semaphoreIndex].acquire();
             tsi.setSpeed(id, speed);
         }
 
