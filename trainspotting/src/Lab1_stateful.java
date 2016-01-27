@@ -43,7 +43,6 @@ public class Lab1_stateful {
         @Override
         public void run() {
             try {
-                tsi.setDebug(false);
                 tsi.setSpeed(id, speed);
                 if (id == 1) {
                     direction = Direction.SOUTH;
