@@ -135,6 +135,7 @@ public class Lab1_stateful {
                                             onDefaultTrack = true;
                                             tsi.setSwitch(15, 9, tsi.SWITCH_RIGHT);
                                         } else {
+                                            onDefaultTrack = false;
                                             tsi.setSwitch(15, 9, tsi.SWITCH_LEFT);
                                         }
                                     }
