@@ -58,7 +58,7 @@ public class Lab1 {
                         int index = sensors.indexOf(new Point(sensor.getXpos(), sensor.getYpos()));
                         switch(index){
                         case 1:case 2:case 15:case 16:
-                            if((direction == Direction.NORTH && (index == 1 || index == 3)) ||
+                            if((direction == Direction.NORTH && (index == 1 || index == 2)) ||
                                         (direction == Direction.SOUTH && (index == 15 || index == 16))) {
                                 changeDirection();
                             }
