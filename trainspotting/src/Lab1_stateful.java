@@ -21,12 +21,8 @@ public class Lab1_stateful {
 
     public enum Direction {
         NORTH, SOUTH;
-
         public static Direction opposite(Direction direction) {
-            if (direction == NORTH) {
-                return SOUTH;
-            }
-            return NORTH;
+            return direction == NORTH ? SOUTH : NORTH;
         }
     }
 
@@ -81,27 +77,14 @@ public class Lab1_stateful {
                                 break;
                             case 1:
                                 if (firstSensor) {
-
                                     releaseLastSection();
-                                    if (onDefaultTrack) {
-                                        semaphores[currentSection].release();
-                                    }
                                 } else {
                                     waitForNextSection();
                                     if (direction == Direction.SOUTH) {
-                                        if (onDefaultTrack) {
-                                            semaphores[currentSection].release();
-                                            tsi.setSwitch(17, 7, tsi.SWITCH_LEFT);
-                                        } else {
-                                            tsi.setSwitch(17, 7, tsi.SWITCH_RIGHT);
-                                        }
-                                        if (semaphores[currentSection + 2].tryAcquire()) {
-                                            onDefaultTrack = true;
-                                            tsi.setSwitch(15, 9, tsi.SWITCH_RIGHT);
-                                        } else {
-                                            onDefaultTrack = false;
-                                            tsi.setSwitch(15, 9, tsi.SWITCH_LEFT);
-                                        }
+                                        if (onDefaultTrack) semaphores[currentSection].release();
+                                        setSwitch(17, 7, onDefaultTrack);
+                                        onDefaultTrack = semaphores[currentSection + 2].tryAcquire();
+                                        setSwitch(15, 9, !onDefaultTrack);
                                     }
                                     currentSection = direction == Direction.NORTH ? currentSection - 2 : currentSection + 2;
                                 }
@@ -113,34 +96,15 @@ public class Lab1_stateful {
                                 } else {
                                     waitForNextSection();
                                     if (direction == Direction.NORTH) {
-                                        if (onDefaultTrack) {
-                                            semaphores[currentSection].release();
-                                            tsi.setSwitch(15, 9, tsi.SWITCH_RIGHT);
-                                        } else {
-                                            tsi.setSwitch(15, 9, tsi.SWITCH_LEFT);
-                                        }
-                                        if (semaphores[currentSection - 2].tryAcquire()) {
-                                            onDefaultTrack = true;
-                                            tsi.setSwitch(17, 7, tsi.SWITCH_LEFT);
-                                        } else {
-                                            onDefaultTrack = false;
-                                            tsi.setSwitch(17, 7, tsi.SWITCH_RIGHT);
-                                        }
-
+                                        if (onDefaultTrack) semaphores[currentSection].release();
+                                        setSwitch(15, 9, !onDefaultTrack);
+                                        onDefaultTrack = semaphores[currentSection - 2].tryAcquire();
+                                        setSwitch(17, 7, onDefaultTrack);
                                     } else {
-                                        if (onDefaultTrack) {
-                                            semaphores[currentSection].release();
-                                            tsi.setSwitch(4, 9, tsi.SWITCH_LEFT);
-                                        } else {
-                                            tsi.setSwitch(4, 9, tsi.SWITCH_RIGHT);
-                                        }
-                                        if (semaphores[currentSection + 2].tryAcquire()) {
-                                            onDefaultTrack = true;
-                                            tsi.setSwitch(3, 11, tsi.SWITCH_LEFT);
-                                        } else {
-                                            onDefaultTrack = false;
-                                            tsi.setSwitch(3, 11, tsi.SWITCH_RIGHT);
-                                        }
+                                        if (onDefaultTrack) semaphores[currentSection].release();
+                                        setSwitch(4, 9, onDefaultTrack);
+                                        onDefaultTrack = semaphores[currentSection + 2].tryAcquire();
+                                        setSwitch(3, 11, onDefaultTrack);
                                     }
                                     currentSection = direction == Direction.NORTH ? currentSection - 2 : currentSection + 2;
                                 }
@@ -149,22 +113,12 @@ public class Lab1_stateful {
                                 break;
                             case 5:
                                 if (direction == Direction.NORTH) {
+                                    if (onDefaultTrack) semaphores[currentSection].release();
                                     if (!firstSensor) {
                                         waitForNextSection();
-                                        if (onDefaultTrack) {
-                                            semaphores[currentSection].release();
-                                            tsi.setSwitch(3, 11, tsi.SWITCH_LEFT);
-                                        } else {
-                                            tsi.setSwitch(3, 11, tsi.SWITCH_RIGHT);
-                                        }
-
-                                        if (semaphores[currentSection - 2].tryAcquire()) {
-                                            onDefaultTrack = true;
-                                            tsi.setSwitch(4, 9, tsi.SWITCH_LEFT);
-                                        } else {
-                                            onDefaultTrack = false;
-                                            tsi.setSwitch(4, 9, tsi.SWITCH_RIGHT);
-                                        }
+                                        setSwitch(3, 11, onDefaultTrack);
+                                        onDefaultTrack = semaphores[currentSection - 2].tryAcquire();
+                                        setSwitch(4, 9, onDefaultTrack);
                                         currentSection -= 2;
                                     }
                                     firstSensor = !firstSensor;
@@ -189,6 +143,10 @@ public class Lab1_stateful {
                 e.getStackTrace();
                 System.err.println("Thread got interrupted for train " + id);
             }
+        }
+
+        private void setSwitch(int x, int y, boolean left) throws CommandException {
+            tsi.setSwitch(x, y, left ? tsi.SWITCH_LEFT : tsi.SWITCH_RIGHT);
         }
 
         private void releaseLastSection() {
