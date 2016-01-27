@@ -55,7 +55,7 @@ public class Lab1 {
                    sensor = tsi.getSensor(id);
                     if(sensor.getStatus() == SensorEvent.ACTIVE){ //Active sensor
 
-                        int index = sensors.indexOf(new Point(sensor.getXpos(), sensor.getYpos()));
+                        int index = sensors.indexOf(new Point(sensor.getXpos(), sensor.getYpos())) + 1;
                         switch(index){
                         case 1:case 2:case 15:case 16:
                             if((direction == Direction.NORTH && (index == 1 || index == 2)) ||
@@ -76,16 +76,16 @@ public class Lab1 {
                                 semaphores[2].release();
                             }else{
                                 driveThroughCriticalSection(2);
-                                if(sensor.getYpos() == 8) semaphores[1].release();
-                                setSwitch(17, 7, sensor.getYpos() == 8);
+                                if(index == 7) semaphores[1].release();
+                                setSwitch(17, 7, index == 7);
                                 setSwitch(15, 9, !semaphores[3].tryAcquire());
                             }
                             break;
                         case 9:case 10:
                             if(direction == Direction.NORTH) {
                                 driveThroughCriticalSection(2);
-                                if(sensor.getYpos() == 10) semaphores[3].release();
-                                setSwitch(15, 9 , sensor.getYpos() ==10);
+                                if(index == 10) semaphores[3].release();
+                                setSwitch(15, 9 , index == 10);
                                 setSwitch(17, 7, semaphores[1].tryAcquire());
                             }else{
                                 semaphores[2].release();
@@ -96,16 +96,16 @@ public class Lab1 {
                                 semaphores[4].release();
                             }else{
                                 driveThroughCriticalSection(4);
-                                if (sensor.getYpos() == 9) semaphores[3].release();
-                                setSwitch(4, 9, sensor.getYpos() == 9);
+                                if (index == 11) semaphores[3].release();
+                                setSwitch(4, 9, index == 11);
                                 setSwitch(3, 11, semaphores[5].tryAcquire());
                             }
                             break;
                         case 13:case 14:
                             if(direction == Direction.NORTH) {
                                 driveThroughCriticalSection(4);
-                                if(sensor.getYpos() == 11) semaphores[5].release();
-                                setSwitch(3, 11, sensor.getYpos() == 11);
+                                if(index == 14) semaphores[5].release();
+                                setSwitch(3, 11, index == 14);
                                 setSwitch(4, 9, semaphores[3].tryAcquire());
 
                             }else{
