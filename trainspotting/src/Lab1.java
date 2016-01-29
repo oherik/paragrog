@@ -10,7 +10,7 @@ public class Lab1 {
 
         semaphores = new Semaphore[6];
         for (int i = 0; i< semaphores.length; i++) {
-            semaphores[i] = new Semaphore(1);   //Binary semaphore
+            semaphores[i] = new Semaphore(1);
         }
         Thread train1 = new Train(1,speed1);
         Thread train2 = new Train(2,speed2);
@@ -42,70 +42,65 @@ public class Lab1 {
         @Override
         public void run() {
             try {
-                //Start clauses
-                if(id == 1){
-                    direction = Direction.SOUTH;
-                }else{
-                    direction = Direction.NORTH;
-                    semaphores[5].acquire();
-                }
+                direction = id == 1 ? Direction.SOUTH : Direction.NORTH;
+                if(id == 2) semaphores[5].acquire();
+
                 tsi.setSpeed(id, speed);
 
                 while(true){
                    sensor = tsi.getSensor(id);
-                    if(sensor.getStatus() == SensorEvent.ACTIVE){ //Active sensor
-
-                        int index = sensors.indexOf(new Point(sensor.getXpos(), sensor.getYpos())) + 1;
+                    if(sensor.getStatus() == SensorEvent.ACTIVE){
+                        int index = sensors.indexOf(new Point(sensor.getXpos(), sensor.getYpos()));
                         switch(index){
-                        case 1:case 2:case 15:case 16:
-                            if((direction == Direction.NORTH && (index == 1 || index == 2)) ||
-                                        (direction == Direction.SOUTH && (index == 15 || index == 16))) {
+                        case 0:case 1:case 14:case 15:
+                            if((direction == Direction.NORTH && (index == 0 || index == 1)) ||
+                                        (direction == Direction.SOUTH && (index == 14 || index == 15))) {
                                 changeDirection();
                             }
                             break;
-                        case 3:case 4:case 5:case 6:
-                            if((direction == Direction.NORTH && (index == 3 || index == 4))
-                                        || (direction == Direction.SOUTH && (index == 5 || index == 6))) {
+                        case 2:case 3:case 4:case 5:
+                            if((direction == Direction.NORTH && (index == 2 || index == 3))
+                                        || (direction == Direction.SOUTH && (index == 4 || index == 5))) {
                                 semaphores[0].release();
                             }else{
-                                driveThroughCriticalSection(0);
+                                stopForSemaphore(0);
                             }
                             break;
-                        case 7:case 8:
+                        case 6:case 7:
                             if(direction == Direction.NORTH) {
                                 semaphores[2].release();
                             }else{
-                                driveThroughCriticalSection(2);
-                                if(index == 7) semaphores[1].release();
-                                setSwitch(17, 7, index == 7);
+                                stopForSemaphore(2);
+                                if(index == 6) semaphores[1].release();
+                                setSwitch(17, 7, index == 6);
                                 setSwitch(15, 9, !semaphores[3].tryAcquire());
                             }
                             break;
-                        case 9:case 10:
+                        case 8:case 9:
                             if(direction == Direction.NORTH) {
-                                driveThroughCriticalSection(2);
-                                if(index == 9) semaphores[3].release();
-                                setSwitch(15, 9 , index == 10);
+                                stopForSemaphore(2);
+                                if(index == 8) semaphores[3].release();
+                                setSwitch(15, 9 , index == 9);
                                 setSwitch(17, 7, semaphores[1].tryAcquire());
                             }else{
                                 semaphores[2].release();
                             }
                             break;
-                        case 11:case 12:
+                        case 10:case 11:
                             if(direction == Direction.NORTH) {
                                 semaphores[4].release();
                             }else{
-                                driveThroughCriticalSection(4);
-                                if (index == 11) semaphores[3].release();
-                                setSwitch(4, 9, index == 11);
+                                stopForSemaphore(4);
+                                if (index == 10) semaphores[3].release();
+                                setSwitch(4, 9, index == 10);
                                 setSwitch(3, 11, semaphores[5].tryAcquire());
                             }
                             break;
-                        case 13:case 14:
+                        case 12:case 13:
                             if(direction == Direction.NORTH) {
-                                driveThroughCriticalSection(4);
-                                if(index == 14) semaphores[5].release();
-                                setSwitch(3, 11, index == 14);
+                                stopForSemaphore(4);
+                                if(index == 13) semaphores[5].release();
+                                setSwitch(3, 11, index == 13);
                                 setSwitch(4, 9, semaphores[3].tryAcquire());
 
                             }else{
@@ -117,7 +112,7 @@ public class Lab1 {
                 }   //End while(true)
 
             } catch (CommandException e) {
-                e.printStackTrace();    // or only e.getMessage() for the error
+                e.printStackTrace();
                 System.exit(1);
             }
             catch (InterruptedException e){
@@ -130,22 +125,24 @@ public class Lab1 {
             tsi.setSwitch(x, y, left ? tsi.SWITCH_LEFT : tsi.SWITCH_RIGHT);
         }
 
-        private void driveThroughCriticalSection(int semaphoreIndex) throws CommandException, InterruptedException {
-            tsi.setSpeed(id, 0);
-            semaphores[semaphoreIndex].acquire();
-            tsi.setSpeed(id, speed);
+        private void stopForSemaphore(int semaphoreIndex) throws CommandException, InterruptedException {
+            if(!semaphores[semaphoreIndex].tryAcquire()) {
+                tsi.setSpeed(id, 0);
+                semaphores[semaphoreIndex].acquire();
+                tsi.setSpeed(id, speed);
+            }
         }
 
         private void changeDirection() throws CommandException, InterruptedException{
             tsi.setSpeed(id, 0);
             sleep(Math.min(1000, 1000 * Math.abs(speed)));
-            speed = - speed;
+            speed = -speed;
             direction = Direction.opposite(direction);
             tsi.setSpeed(id,speed);
         }
 
         private void setupSensors() {
-            sensors = new ArrayList<Point>(16);
+            sensors = new ArrayList(16);
             sensors.add(new Point(15,3));
             sensors.add(new Point(15,5));
             sensors.add(new Point(6,7));
