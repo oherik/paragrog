@@ -2,7 +2,9 @@ import TSim.*;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.ThreadLocalRandom;
 
 public class Lab1 {
     static Semaphore[] semaphores;
@@ -12,10 +14,26 @@ public class Lab1 {
         for (int i = 0; i< semaphores.length; i++) {
             semaphores[i] = new Semaphore(1);
         }
-        Thread train1 = new Train(1,speed1);
-        Thread train2 = new Train(2,speed2);
+        Train train1 = new Train(1,speed1);
+        Train train2 = new Train(2,speed2);
         train1.start();
         train2.start();
+
+        while(true){
+            try {
+                Thread.sleep(4000);
+                int new1 = ThreadLocalRandom.current().nextInt(1, 15 + 1);
+                int new2 = ThreadLocalRandom.current().nextInt(1, 15 + 1);
+                train1.setTest(new1);
+                train2.setTest(new2);
+
+            } catch (CommandException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }
     }
 
     public enum Direction {
@@ -38,6 +56,7 @@ public class Lab1 {
             tsi = TSimInterface.getInstance();
             setupSensors();
         }
+
 
         @Override
         public void run() {
@@ -126,8 +145,16 @@ public class Lab1 {
         }
 
         private void stopForSemaphore(int semaphoreIndex) throws CommandException, InterruptedException {
-            if(!semaphores[semaphoreIndex].tryAcquire()) {
+            if(semaphores[semaphoreIndex].availablePermits()==0) {
+                int slow = (int) (Math.min(Math.abs(speed),2) * Math.signum(speed));
+                System.out.println(slow);
+                tsi.setSpeed(id, slow);
+            }
+            boolean hasPassedSensor = tsi.getSensor(id).getStatus() == SensorEvent.INACTIVE;
+            System.out.println("harpas");
+            if(hasPassedSensor && !semaphores[semaphoreIndex].tryAcquire()){
                 tsi.setSpeed(id, 0);
+                System.out.println("stop");
                 semaphores[semaphoreIndex].acquire();
                 tsi.setSpeed(id, speed);
             }
@@ -138,7 +165,7 @@ public class Lab1 {
             sleep(Math.min(1000, 1000 * Math.abs(speed)));
             speed = -speed;
             direction = Direction.opposite(direction);
-            tsi.setSpeed(id,speed);
+            tsi.setSpeed(id, speed);
         }
 
         private void setupSensors() {
@@ -146,19 +173,24 @@ public class Lab1 {
             sensors.add(new Point(15,3));
             sensors.add(new Point(15,5));
             sensors.add(new Point(6,7));
-            sensors.add(new Point(8,5));
+            sensors.add(new Point(9,5));
             sensors.add(new Point(10,8));
-            sensors.add(new Point(10,7));
+            sensors.add(new Point(11,7));
             sensors.add(new Point(15,8));
-            sensors.add(new Point(15,7));
+            sensors.add(new Point(14,7));
             sensors.add(new Point(12,9));
             sensors.add(new Point(13,10));
             sensors.add(new Point(7,9));
             sensors.add(new Point(6,10));
             sensors.add(new Point(4,13));
-            sensors.add(new Point(5,11));
+            sensors.add(new Point(6,11));
             sensors.add(new Point(15,13));
             sensors.add(new Point(15,11));
         }
+        public void setTest(int speedtest) throws CommandException{
+            int ny = (int) (Math.min(Math.abs(speed),speedtest) * Math.signum(speed));
+            this.speed = ny;
+        }
+
     }
 }
