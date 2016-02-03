@@ -1,0 +1,47 @@
+Assignment 1. Trainspotting
+Julia Friberg & Erik Öhrn
+Group 14
+
+Sensor placement
+The railroad is made up of seven distinct sections. These are, from north to south:
+1. Double track with stations
+2. Crossing
+3. Double track
+4. Single track
+5. Double track        (middle section)
+6. Single track
+7. Double track with stations
+
+
+We opted to place sensors at all double tracks, with four sensors for each of those sections (with a total of 16 sensors). This means that there’s a pair of sensors before every single track and crossing, as well as at both stations. The sensors are placed so that a full train can fit between the sensor and the switch itself, which allows for enough time for the train to slow down from its maximum speed and eventually stop right before the switch. We’ve made a compromise here: the placements will allow for reasonable performance for slower trains as well as fast ones. It will also allow fast trains to pass slower ones in the middle sections. The downside of not placing the sensors further in the center of each section is that the maximum speed isn’t as fast as it could have been with sensors placed closer to the middle.
+
+
+In addition to these sensors we have two right before section 3 (middle section). These are there to ensure that the first train to the double section gets to take the default track. In order to achieve this we had to store which semaphores the train is currently holding, which, although it detracts from our originally stateless solution, is allowed according to the lab PM. In a previous solution these two sensors, as well as the array consisting of the currently hold semaphores, were omitted. This resulted in somewhat less complicated and shorter code, but didn’t allow the fastest train to take the default track at all times (especially if there were one very fast and one very slow train).
+
+
+Critical sections and their semaphores
+The critical sections we used semaphores for are:
+1. The crossing
+2. The default track of section 1 and 3
+3. The first single track
+4. The default track of section 5
+5. The second single track
+6. The default track of section 7
+The default track is the shortest one for the different double track sections.
+
+
+When approaching a critical section consisting of a single track the train checks if its semaphore has been taken. If it has, the train starts to slow down. The number used for slowing down (5) was determined to be the highest number for which the train could stop in time after passing the sensor. The reason the train slows down is to ensure the other train has time to pass, as well as making the start distance shorter if it needs to stop completely (as opposed to stopping directly without first slowing down). When the train has passed the sensor it then tries to acquire the semaphore. It it’s unsuccessful, meaning the other train is still blocking the path, it stops completely until it can acquire the semaphore. When the semaphore is finally acquired the speed of the train is once again set to its original state.
+
+
+After acquiring the semaphore, it tries to acquire the semaphore for the following default track. It will succeed depending on if the default path isn’t currently taken. The switches for that double track are set depending on the success.
+
+
+The switches are then set depending on which track the train is currently on. Furthermore, if it’s on a default track it releases the relevant semaphore.
+
+
+Train speed
+The current maximum speed is 22, which is the maximum speed that didn’t cause the test below to fail. Any faster and the trains risk to collide with each other and/or derail at the stations.
+
+
+Testing
+One train was set to the maximum speed. The other was set to a random speed between 1 and the maximum speed. The speed of that train was then changed to a new random integer between 1 and the maximum every time it arrived at a station. The test was left to run on double simulation speed for 20 minutes. This was to assure that our maximum speed worked independent on whatever speed the other train was set to.
