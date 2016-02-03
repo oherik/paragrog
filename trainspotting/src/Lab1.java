@@ -4,7 +4,6 @@ import java.awt.*;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.ThreadLocalRandom;
 
 public class Lab1 {
     static Semaphore[] semaphores;
@@ -18,20 +17,6 @@ public class Lab1 {
         Train train2 = new Train(2,22);
         train1.start();
         train2.start();
-
-        while(true){
-            try {
-                Thread.sleep(4000);
-                int new1 = ThreadLocalRandom.current().nextInt(1, 21 + 1);
-                int new2 = ThreadLocalRandom.current().nextInt(1, 21 + 1);
-            //    train1.setTest(new1);
-             //   train2.setTest(new2);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-        }
     }
 
     public enum Direction {
@@ -207,10 +192,5 @@ public class Lab1 {
             sensors.add(new Point(16,9));
             sensors.add(new Point(3,9));
         }
-        public void setTest(int speedtest) throws CommandException{
-            int ny = (int) (Math.min(Math.abs(speed),speedtest) * Math.signum(speed));
-            this.speed = ny;
-        }
-
     }
 }
