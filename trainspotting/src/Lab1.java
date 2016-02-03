@@ -90,7 +90,7 @@ public class Lab1 {
                                 setSwitch(17, 7, index == 6);
                             }
                             break;
-                        //The train is leaving/going onto the first single track.
+                            //The northern two sensors on section 3 (middle double track)
                         case 8:case 9:
                             if(direction == Direction.NORTH) {
                                 stopForSemaphore(2);
@@ -98,6 +98,7 @@ public class Lab1 {
                             }else
                                 release(2);
                             break;
+                            //The southern two sensors on section 3 (middle double track)
                         case 10:case 11:
                             if(direction == Direction.NORTH)
                                 release(4);
@@ -106,6 +107,7 @@ public class Lab1 {
                                 setSwitch(4, 9, index == 10);
                             }
                             break;
+                            //The northern two sensors on section 5 (southern double track)
                         case 12:case 13:
                             if(direction == Direction.NORTH) {
                                 stopForSemaphore(4);
