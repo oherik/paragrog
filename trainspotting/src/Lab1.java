@@ -2,7 +2,6 @@ import TSim.*;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.concurrent.Semaphore;
 
 public class Lab1 {
@@ -13,8 +12,8 @@ public class Lab1 {
         for (int i = 0; i< semaphores.length; i++) {
             semaphores[i] = new Semaphore(1);
         }
-        Train train1 = new Train(1,22);
-        Train train2 = new Train(2,22);
+        Train train1 = new Train(1,speed1);
+        Train train2 = new Train(2,speed2);
         train1.start();
         train2.start();
     }
@@ -118,7 +117,12 @@ public class Lab1 {
                                 release(4);
                             }
                             break;
-                           case 16:
+                             /*  The sensor north of section 3 (middle double track)
+                            It will here be decided if the train will take the default or the secondary track, if going
+                            south. If it's on its way north it will release the default track semaphore for section 3.
+                            as well as try to acquire the default semaphore for the next double track section(i.e. 1).
+                             */
+                            case 16:
                                 if(direction == Direction.SOUTH) {
                                     setSwitch(15, 9, !(holdingSemaphore[3] = semaphores[3].tryAcquire()));
                                 }   else {
@@ -127,6 +131,11 @@ public class Lab1 {
                                     setSwitch(17, 7, holdingSemaphore[1] = semaphores[1].tryAcquire());
                                 }
                                 break;
+                            /*  The sensor south of section 3 (middle double track)
+                            It will here be decided if the train will take the default or the secondary track, if going
+                            north. If it's on its way south it will release the default track semaphore for section 3,
+                            as well as try to acquire the default semaphore for the next double track section(i.e. 5).
+                           */
                             case 17:
                                 if(direction == Direction.NORTH){
                                     setSwitch(4, 9, holdingSemaphore[3] = semaphores[3].tryAcquire());
@@ -136,6 +145,7 @@ public class Lab1 {
                                     setSwitch(3, 11, holdingSemaphore[5] = semaphores[5].tryAcquire());
                                 }
                                 break;
+
                         }
                     }   //End sensor active
                 }   //End while(true)
@@ -173,7 +183,7 @@ public class Lab1 {
         /**
          *  Tries to acquire the semaphore for the next single track. If the train doesn't get it it slows down and then
          *  tries again when it has passed the sensors. If it doesn't get the semaphore it stops and waits for it to
-         *  become availible. When it finally gets the semaphore the train starts going at its original speed.
+         *  become available. When it finally gets the semaphore the train starts going at its original speed.
          * @param semaphoreIndex    The semaphore to acquire
          * @throws CommandException
          * @throws InterruptedException
@@ -203,10 +213,6 @@ public class Lab1 {
             speed = -speed;
             direction = Direction.opposite(direction);
             tsi.setSpeed(id, speed);
-            if(id == 1){        //TODO test
-                Random r = new Random();
-               speed = (int)Math.signum(speed)*(r.nextInt((22 - 1) + 1) + 1);
-            }
         }
 
         /**
