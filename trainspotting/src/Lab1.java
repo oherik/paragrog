@@ -136,15 +136,34 @@ public class Lab1 {
             }
         }
 
+        /**
+         * Releases a semaphore as well as making sure the train remembers that it doesn't hold it anymore
+         * @param index The index of the semaphore to release
+         */
         private void release(int index){
             semaphores[index].release();
             holdingSemaphore[index] = false;
         }
 
+        /**
+         * Sets a switch either left or right
+         * @param x x coordinate
+         * @param y y coordinate
+         * @param left  Set to true if the switch is to be set to LEFT, otherwise the swich will be set to RIGHT
+         * @throws CommandException
+         */
         private void setSwitch(int x, int y, boolean left) throws CommandException {
             tsi.setSwitch(x, y, left ? tsi.SWITCH_LEFT : tsi.SWITCH_RIGHT);
         }
 
+        /**
+         *  Tries to acquire the semaphore for the next single track. If the train doesn't get it it slows down and then
+         *  tries again when it has passed the sensors. If it doesn't get the semaphore it stops and waits for it to
+         *  become availible. When it finally gets the semaphore the train starts going at its original speed.
+         * @param semaphoreIndex    The semaphore to acquire
+         * @throws CommandException
+         * @throws InterruptedException
+         */
         private void stopForSemaphore(int semaphoreIndex) throws CommandException, InterruptedException {
             if(!semaphores[semaphoreIndex].tryAcquire()){
                 int slow = (int) (Math.min(Math.abs(speed),5) * Math.signum(speed));
@@ -159,18 +178,26 @@ public class Lab1 {
             holdingSemaphore[semaphoreIndex] = true;
         }
 
+        /**
+         * Stops the train, waits a few seconds and then reverse the direction (as well as the speed)
+         * @throws CommandException
+         * @throws InterruptedException
+         */
         private void changeDirection() throws CommandException, InterruptedException{
             tsi.setSpeed(id, 0);
             sleep(1000 + (20 * Math.abs(speed)));
             speed = -speed;
             direction = Direction.opposite(direction);
             tsi.setSpeed(id, speed);
-            if(id == 1){
+            if(id == 1){        //TODO test
                 Random r = new Random();
                speed = (int)Math.signum(speed)*(r.nextInt((22 - 1) + 1) + 1);
             }
         }
 
+        /**
+         * Initialize all the sensors. Uses the coordinates of the sensors and store them in a list for easy access.
+         */
         private void setupSensors() {
             sensors = new ArrayList(16);
             sensors.add(new Point(15,3));
