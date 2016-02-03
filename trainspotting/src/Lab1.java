@@ -19,6 +19,10 @@ public class Lab1 {
         train2.start();
     }
 
+    /**
+     * Class for the direction of the train. The direction can be either North or South.
+     * Method opposite changes the direction to the opposite direction.
+     */
     public enum Direction {
         NORTH,SOUTH;
         public static Direction opposite(Direction direction) {
@@ -26,6 +30,9 @@ public class Lab1 {
         }
     }
 
+    /**
+     * Class for trains and how they drive on the track.
+     */
     private class Train extends Thread{
         Integer id, speed;
         TSimInterface tsi;
@@ -44,7 +51,8 @@ public class Lab1 {
         @Override
         public void run() {
             try {
-               // tsi.setDebug(false);
+                tsi.setDebug(false);
+                //Start conditions depending on train ID.
                 direction = id == 1 ? Direction.SOUTH : Direction.NORTH;
                 if(id == 2) {
                     semaphores[5].acquire();
@@ -52,23 +60,28 @@ public class Lab1 {
                 }
                 tsi.setSpeed(id, speed);
 
+                //loop to keep train going
                 while(true){
+                    //Check which sensor the train passes
                    sensor = tsi.getSensor(id);
                     if(sensor.getStatus() == SensorEvent.ACTIVE){
                         int index = sensors.indexOf(new Point(sensor.getXpos(), sensor.getYpos()));
                         switch(index){
+                        //The train is at a station and should change direction.
                         case 0:case 1:case 14:case 15:
                             if((direction == Direction.NORTH && (index == 0 || index == 1)) ||
                                         (direction == Direction.SOUTH && (index == 14 || index == 15))) {
                                 changeDirection();
                             }
                             break;
+                        //The train is passing/has passed the crossing and aquires/releases the semaphore for that crossing.
                         case 2:case 3:case 4:case 5:
                             if((direction == Direction.NORTH && (index == 2 || index == 3))
                                         || (direction == Direction.SOUTH && (index == 4 || index == 5))) {
                                 release(0);
                             }else   stopForSemaphore(0);
                             break;
+                        //The train is leaving/going onto the first single track.
                         case 6:case 7:
                             if(direction == Direction.NORTH)
                                 release(2);
@@ -79,6 +92,7 @@ public class Lab1 {
                                 setSwitch(17, 7, index == 6);
                             }
                             break;
+                        //The train is leaving/going onto the first single track.
                         case 8:case 9:
                             if(direction == Direction.NORTH) {
                                 stopForSemaphore(2);
