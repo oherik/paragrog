@@ -50,7 +50,6 @@ public class Lab1 {
         @Override
         public void run() {
             try {
-                tsi.setDebug(false);
                 //Start conditions depending on train ID.
                 direction = id == 1 ? Direction.SOUTH : Direction.NORTH;
                 if(id == 2) {
