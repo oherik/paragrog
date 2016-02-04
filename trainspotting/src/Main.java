@@ -20,8 +20,7 @@ public class Main {
 			Process p = Runtime.getRuntime().exec(tsimCommand);
 			TSimInterface.init(p.getInputStream(), p.getOutputStream());
 			TSimInterface.getInstance().setDebug(true);
-			new Lab1(train1_speed, train2_speed);
-			// new Lab2(train1_speed, train2_speed);
+			new Lab2(train1_speed, train2_speed);
 			p.waitFor();
 			
 		} catch (ArrayIndexOutOfBoundsException e) {
