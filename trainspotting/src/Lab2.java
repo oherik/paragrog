@@ -4,10 +4,8 @@ import TSim.TSimInterface;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Lab2 {
     static Lock[] locks;
@@ -15,7 +13,7 @@ public class Lab2 {
 
         locks = new Lock[6];
         for (int i = 0; i< locks.length; i++) {
-            locks[i] = new TrackLock;
+            locks[i] = new TrackMonitor;
         }
         Train train1 = new Train(1,speed1);
         Train train2 = new Train(2,speed2);
@@ -33,46 +31,18 @@ public class Lab2 {
             return direction == NORTH ? SOUTH : NORTH;
         }
     }
-
-    private class TrackLock implements Lock {
-        public void enter(){
-            lock();
+    
+    private class TrackMonitor  {
+        private final Lock lock = new ReentrantLock();
+        public void enter() {
+            lock.lock();
         }
 
-        public void leave(){
-            unlock();
-        }
-
-        @Override
-        public void lock() {
-
-        }
-
-        @Override
-        public void lockInterruptibly() throws InterruptedException {
-
-        }
-
-        @Override
-        public boolean tryLock() {
-            return false;
-        }
-
-        @Override
-        public boolean tryLock(long l, TimeUnit timeUnit) throws InterruptedException {
-            return false;
-        }
-
-        @Override
-        public void unlock() {
-
-        }
-
-        @Override
-        public Condition newCondition() {
-            return null;
+        public void leave() {
+            lock.unlock();
         }
     }
+
 
     /**
      * Class for trains and how they drive on the track.
