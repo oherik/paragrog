@@ -4,16 +4,17 @@ import TSim.TSimInterface;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class Lab2 {
-    static Lock[] locks;
+    static TrackMonitor[] monitors;
     public Lab2(Integer speed1, Integer speed2) {
 
-        locks = new Lock[6];
-        for (int i = 0; i< locks.length; i++) {
-            locks[i] = new TrackMonitor;
+        monitors = new TrackMonitor[6];
+        for (int i = 0; i< monitors.length; i++) {
+            monitors[i] = new TrackMonitor();
         }
         Train train1 = new Train(1,speed1);
         Train train2 = new Train(2,speed2);
@@ -31,14 +32,22 @@ public class Lab2 {
             return direction == NORTH ? SOUTH : NORTH;
         }
     }
-    
+
     private class TrackMonitor  {
         private final Lock lock = new ReentrantLock();
+        private Condition trackEmpty = lock.newCondition();
+        private boolean trainOnTrack = false;
+
         public void enter() {
             lock.lock();
             try {
-
-            }finally {
+                while(trainOnTrack) {
+                    trackEmpty.await();
+                }
+                trainOnTrack = true;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
                 lock.unlock();
             }
         }
@@ -46,11 +55,22 @@ public class Lab2 {
         public void leave() {
             lock.lock();
             try {
-
+                trainOnTrack = false;
+                trackEmpty.signal();
             }finally {
                 lock.unlock();
             }
         }
+
+        public boolean tryEnter() {
+            if(trainOnTrack) {
+                return false;
+            }else{
+                enter();
+                return true;
+            }
+        }
+
     }
 
 
@@ -63,13 +83,13 @@ public class Lab2 {
         SensorEvent sensor;
         Direction direction;
         ArrayList sensors;
-        boolean[] holdingSemaphore;
+        boolean[] holdingMonitor;
         private Train(Integer id, Integer speed) {
             this.id = id;
             this.speed = speed;
             tsi = TSimInterface.getInstance();
             setupSensors();
-            holdingSemaphore = new boolean[7];
+            holdingMonitor = new boolean[7];
         }
 
         @Override
@@ -78,8 +98,8 @@ public class Lab2 {
                 //Start conditions depending on train ID.
                 direction = id == 1 ? Direction.SOUTH : Direction.NORTH;
                 if(id == 2) {
-                    locks[5].acquire();
-                    holdingSemaphore[5] = true;
+                    monitors[5].enter();
+                    holdingMonitor[5] = true;
                 }
                 tsi.setSpeed(id, speed);
 
@@ -102,15 +122,15 @@ public class Lab2 {
                             if((direction == Direction.NORTH && (index == 2 || index == 3))
                                         || (direction == Direction.SOUTH && (index == 4 || index == 5))) {
                                 release(0);
-                            }else   stopForSemaphore(0);
+                            }else   stopForMonitor(0);
                             break;
                         //The train is leaving/going onto the first single track.
                         case 6:case 7:
                             if(direction == Direction.NORTH)
                                 release(2);
                             else{
-                                stopForSemaphore(2);
-                                if(holdingSemaphore[1])
+                                stopForMonitor(2);
+                                if(holdingMonitor[1])
                                     release(1);
                                 setSwitch(17, 7, index == 6);
                             }
@@ -118,7 +138,7 @@ public class Lab2 {
                             //The northern two sensors on section 3 (middle double track)
                         case 8:case 9:
                             if(direction == Direction.NORTH) {
-                                stopForSemaphore(2);
+                                stopForMonitor(2);
                                 setSwitch(15, 9, index == 9);
                             }else
                                 release(2);
@@ -128,15 +148,15 @@ public class Lab2 {
                             if(direction == Direction.NORTH)
                                 release(4);
                             else{
-                                stopForSemaphore(4);
+                                stopForMonitor(4);
                                 setSwitch(4, 9, index == 10);
                             }
                             break;
                             //The northern two sensors on section 5 (southern double track)
                         case 12:case 13:
                             if(direction == Direction.NORTH) {
-                                stopForSemaphore(4);
-                                if(holdingSemaphore[5])
+                                stopForMonitor(4);
+                                if(holdingMonitor[5])
                                     release(5);
                                 setSwitch(3, 11, index == 13);
                             }else{
@@ -150,11 +170,11 @@ public class Lab2 {
                              */
                             case 16:
                                 if(direction == Direction.SOUTH) {
-                                    setSwitch(15, 9, !(holdingSemaphore[3] = locks[3].tryAcquire()));
+                                    setSwitch(15, 9, !(holdingMonitor[3] = monitors[3].tryEnter()));
                                 }   else {
-                                    if (holdingSemaphore[3])
+                                    if (holdingMonitor[3])
                                         release(3);
-                                    setSwitch(17, 7, holdingSemaphore[1] = locks[1].tryAcquire());
+                                    setSwitch(17, 7, holdingMonitor[1] = monitors[1].tryEnter());
                                 }
                                 break;
                             /*  The sensor south of section 3 (middle double track)
@@ -164,11 +184,11 @@ public class Lab2 {
                            */
                             case 17:
                                 if(direction == Direction.NORTH){
-                                    setSwitch(4, 9, holdingSemaphore[3] = locks[3].tryAcquire());
+                                    setSwitch(4, 9, holdingMonitor[3] = monitors[3].tryEnter());
                                 } else{
-                                    if (holdingSemaphore[3])
+                                    if (holdingMonitor[3])
                                         release(3);
-                                    setSwitch(3, 11, holdingSemaphore[5] = locks[5].tryAcquire());
+                                    setSwitch(3, 11, holdingMonitor[5] = monitors[5].tryEnter());
                                 }
                                 break;
 
@@ -191,8 +211,8 @@ public class Lab2 {
          * @param index The index of the semaphore to release
          */
         private void release(int index){
-            locks[index].release();
-            holdingSemaphore[index] = false;
+            monitors[index].leave();
+            holdingMonitor[index] = false;
         }
 
         /**
@@ -210,22 +230,22 @@ public class Lab2 {
          *  Tries to acquire the semaphore for the next single track. If the train doesn't get it it slows down and then
          *  tries again when it has passed the sensors. If it doesn't get the semaphore it stops and waits for it to
          *  become available. When it finally gets the semaphore the train starts going at its original speed.
-         * @param semaphoreIndex    The semaphore to acquire
+         * @param index    The semaphore to acquire
          * @throws CommandException
          * @throws InterruptedException
          */
-        private void stopForSemaphore(int semaphoreIndex) throws CommandException, InterruptedException {
-            if(!locks[semaphoreIndex].tryAcquire()){
+        private void stopForMonitor(int index) throws CommandException, InterruptedException {
+            if(!monitors[index].tryEnter()){
                 int slow = (int) (Math.min(Math.abs(speed),5) * Math.signum(speed));
                 tsi.setSpeed(id, slow);
                 boolean hasPassedSensor = tsi.getSensor(id).getStatus() == SensorEvent.INACTIVE;
-                if(hasPassedSensor && !locks[semaphoreIndex].tryAcquire()){
+                if(hasPassedSensor && !monitors[index].tryEnter()){
                     tsi.setSpeed(id, 0);
-                    locks[semaphoreIndex].acquire();
+                    monitors[index].enter();
                 }
                 tsi.setSpeed(id, speed);
             }
-            holdingSemaphore[semaphoreIndex] = true;
+            holdingMonitor[index] = true;
         }
 
         /**
