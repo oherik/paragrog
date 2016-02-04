@@ -36,10 +36,20 @@ public class Lab2 {
         private final Lock lock = new ReentrantLock();
         public void enter() {
             lock.lock();
+            try {
+            
+            }finally {
+                lock.unlock();
+            }
         }
 
         public void leave() {
-            lock.unlock();
+            lock.lock();
+            try {
+
+            }finally {
+                lock.unlock();
+            }
         }
     }
 
