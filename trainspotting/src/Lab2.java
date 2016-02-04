@@ -37,7 +37,7 @@ public class Lab2 {
         public void enter() {
             lock.lock();
             try {
-            
+
             }finally {
                 lock.unlock();
             }
