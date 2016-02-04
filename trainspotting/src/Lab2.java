@@ -5,14 +5,17 @@ import TSim.TSimInterface;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
 public class Lab2 {
-    static Semaphore[] semaphores;
+    static Lock[] locks;
     public Lab2(Integer speed1, Integer speed2) {
 
-        semaphores = new Semaphore[6];
-        for (int i = 0; i< semaphores.length; i++) {
-            semaphores[i] = new Semaphore(1);
+        locks = new Lock[6];
+        for (int i = 0; i< locks.length; i++) {
+            locks[i] = new TrackLock;
         }
         Train train1 = new Train(1,speed1);
         Train train2 = new Train(2,speed2);
@@ -28,6 +31,46 @@ public class Lab2 {
         NORTH,SOUTH;
         public static Direction opposite(Direction direction) {
             return direction == NORTH ? SOUTH : NORTH;
+        }
+    }
+
+    private class TrackLock implements Lock {
+        public void enter(){
+            lock();
+        }
+
+        public void leave(){
+            unlock();
+        }
+
+        @Override
+        public void lock() {
+
+        }
+
+        @Override
+        public void lockInterruptibly() throws InterruptedException {
+
+        }
+
+        @Override
+        public boolean tryLock() {
+            return false;
+        }
+
+        @Override
+        public boolean tryLock(long l, TimeUnit timeUnit) throws InterruptedException {
+            return false;
+        }
+
+        @Override
+        public void unlock() {
+
+        }
+
+        @Override
+        public Condition newCondition() {
+            return null;
         }
     }
 
@@ -55,7 +98,7 @@ public class Lab2 {
                 //Start conditions depending on train ID.
                 direction = id == 1 ? Direction.SOUTH : Direction.NORTH;
                 if(id == 2) {
-                    semaphores[5].acquire();
+                    locks[5].acquire();
                     holdingSemaphore[5] = true;
                 }
                 tsi.setSpeed(id, speed);
@@ -127,11 +170,11 @@ public class Lab2 {
                              */
                             case 16:
                                 if(direction == Direction.SOUTH) {
-                                    setSwitch(15, 9, !(holdingSemaphore[3] = semaphores[3].tryAcquire()));
+                                    setSwitch(15, 9, !(holdingSemaphore[3] = locks[3].tryAcquire()));
                                 }   else {
                                     if (holdingSemaphore[3])
                                         release(3);
-                                    setSwitch(17, 7, holdingSemaphore[1] = semaphores[1].tryAcquire());
+                                    setSwitch(17, 7, holdingSemaphore[1] = locks[1].tryAcquire());
                                 }
                                 break;
                             /*  The sensor south of section 3 (middle double track)
@@ -141,11 +184,11 @@ public class Lab2 {
                            */
                             case 17:
                                 if(direction == Direction.NORTH){
-                                    setSwitch(4, 9, holdingSemaphore[3] = semaphores[3].tryAcquire());
+                                    setSwitch(4, 9, holdingSemaphore[3] = locks[3].tryAcquire());
                                 } else{
                                     if (holdingSemaphore[3])
                                         release(3);
-                                    setSwitch(3, 11, holdingSemaphore[5] = semaphores[5].tryAcquire());
+                                    setSwitch(3, 11, holdingSemaphore[5] = locks[5].tryAcquire());
                                 }
                                 break;
 
@@ -168,7 +211,7 @@ public class Lab2 {
          * @param index The index of the semaphore to release
          */
         private void release(int index){
-            semaphores[index].release();
+            locks[index].release();
             holdingSemaphore[index] = false;
         }
 
@@ -192,13 +235,13 @@ public class Lab2 {
          * @throws InterruptedException
          */
         private void stopForSemaphore(int semaphoreIndex) throws CommandException, InterruptedException {
-            if(!semaphores[semaphoreIndex].tryAcquire()){
+            if(!locks[semaphoreIndex].tryAcquire()){
                 int slow = (int) (Math.min(Math.abs(speed),5) * Math.signum(speed));
                 tsi.setSpeed(id, slow);
                 boolean hasPassedSensor = tsi.getSensor(id).getStatus() == SensorEvent.INACTIVE;
-                if(hasPassedSensor && !semaphores[semaphoreIndex].tryAcquire()){
+                if(hasPassedSensor && !locks[semaphoreIndex].tryAcquire()){
                     tsi.setSpeed(id, 0);
-                    semaphores[semaphoreIndex].acquire();
+                    locks[semaphoreIndex].acquire();
                 }
                 tsi.setSpeed(id, speed);
             }
