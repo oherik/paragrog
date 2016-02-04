@@ -117,7 +117,7 @@ public class Lab2 {
                                 changeDirection();
                             }
                             break;
-                        //The train is passing/has passed the crossing and aquires/releases the semaphore for that crossing.
+                        //The train is passing/has passed the crossing and aquires/releases the monitor for that crossing.
                         case 2:case 3:case 4:case 5:
                             if((direction == Direction.NORTH && (index == 2 || index == 3))
                                         || (direction == Direction.SOUTH && (index == 4 || index == 5))) {
@@ -165,8 +165,8 @@ public class Lab2 {
                             break;
                              /*  The sensor north of section 3 (middle double track)
                             It will here be decided if the train will take the default or the secondary track, if going
-                            south. If it's on its way north it will release the default track semaphore for section 3.
-                            as well as try to acquire the default semaphore for the next double track section(i.e. 1).
+                            south. If it's on its way north it will release the default track monitor for section 3.
+                            as well as try to acquire the default monitor for the next double track section(i.e. 1).
                              */
                             case 16:
                                 if(direction == Direction.SOUTH) {
@@ -179,8 +179,8 @@ public class Lab2 {
                                 break;
                             /*  The sensor south of section 3 (middle double track)
                             It will here be decided if the train will take the default or the secondary track, if going
-                            north. If it's on its way south it will release the default track semaphore for section 3,
-                            as well as try to acquire the default semaphore for the next double track section(i.e. 5).
+                            north. If it's on its way south it will release the default track monitor for section 3,
+                            as well as try to acquire the default monitor for the next double track section(i.e. 5).
                            */
                             case 17:
                                 if(direction == Direction.NORTH){
@@ -207,8 +207,8 @@ public class Lab2 {
         }
 
         /**
-         * Releases a semaphore as well as making sure the train remembers that it doesn't hold it anymore
-         * @param index The index of the semaphore to release
+         * Releases a monitor as well as making sure the train remembers that it doesn't hold it anymore
+         * @param index The index of the monitor to release
          */
         private void release(int index){
             monitors[index].leave();
@@ -227,10 +227,10 @@ public class Lab2 {
         }
 
         /**
-         *  Tries to acquire the semaphore for the next single track. If the train doesn't get it it slows down and then
-         *  tries again when it has passed the sensors. If it doesn't get the semaphore it stops and waits for it to
-         *  become available. When it finally gets the semaphore the train starts going at its original speed.
-         * @param index    The semaphore to acquire
+         *  Tries to acquire the monitor for the next single track. If the train doesn't get it it slows down and then
+         *  tries again when it has passed the sensors. If it doesn't get the monitor it stops and waits for it to
+         *  become available. When it finally gets the monitor the train starts going at its original speed.
+         * @param index    The monitor to acquire
          * @throws CommandException
          * @throws InterruptedException
          */
