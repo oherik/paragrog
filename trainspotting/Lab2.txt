@@ -1,0 +1,10 @@
+What is the purpose of each method in the monitor?
+enter() - Called when a train wants to enter a critical track section. If there’s a train on the track (set using a boolean), it awaits the conditional variable for that track and thus stops the thread. When the conditional variable is signalled, meaning the track is empty, the train continues. The method also sets the monitors lock at the starts and unlocks it when it’s finished, to ensure no other train enters the method.
+leave() - This method is called when a train leaves the track covered by the monitor. It simply sets the boolean trainOnTrack to false and signals the conditional variable trackEmpty and to ensure a waiting train can enter the track. The method also sets the monitors lock at the starts and unlocks it when it’s finished, to ensure no other train enters the method.
+tryEnter() - This method is used to see if a train is already on that specific track that the monitor represents and if not, the method enter() is called and the train calling the method can enter the track. If a train is already on the track, the method will return false and nothing will happen. This method is used in the same way the method tryAcquire() in the previous lab with semaphores was used.
+
+How many conditional variables, if any, are needed in your solution? Justify your answer.
+There are a total of six conditional variables, one for each monitor. Each critical track section has its own monitor, and each monitor has a Condition trackEmpty. This makes sure that the train can wait for the track to become empty, as well as send a signal to the condition variable that the track is clear.
+
+
+
