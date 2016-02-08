@@ -4,7 +4,7 @@ leave() - This method is called when a train leaves the track covered by the mon
 tryEnter() - This method is used to see if a train is already on that specific track that the monitor represents and if not, the method enter() is called and the train calling the method can enter the track. If a train is already on the track, the method will return false and nothing will happen. This method is used in the same way the method tryAcquire() in the previous lab with semaphores was used.
 
 How many conditional variables, if any, are needed in your solution? Justify your answer.
-There are a total of six conditional variables, one for each monitor. Each critical track section has its own monitor, and each monitor has a Condition trackEmpty. This makes sure that the train can wait for the track to become empty, as well as send a signal to the condition variable that the track is clear.
+There are a total of six conditional variables, one for each monitor. Each critical track section (meaning the crossing, the single track sections and the default double tracks) has its own monitor, and each monitor has a Condition trackEmpty. This makes sure that the train can wait for the track to become empty, as well as send a signal to the condition variable that the track is clear.
 
 
 
