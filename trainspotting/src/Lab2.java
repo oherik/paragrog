@@ -14,7 +14,7 @@ public class Lab2 {
 
         monitors = new TrackMonitor[6];
         for (int i = 0; i< monitors.length; i++) {
-            monitors[i] = new TrackMonitor();
+            monitors[i] = new TrackMonitor();       //One monitor per critical section
         }
         Train train1 = new Train(1,speed1);
         Train train2 = new Train(2,speed2);
@@ -33,11 +33,17 @@ public class Lab2 {
         }
     }
 
+    /**
+     * A monitor for a track section.
+     */
     private class TrackMonitor  {
         private final Lock lock = new ReentrantLock();
         private Condition trackEmpty = lock.newCondition();
         private boolean trainOnTrack = false;
 
+        /**
+         * A train enters a critical section. It waits until the track is clear before continuing.
+         */
         public void enter() {
             lock.lock();
             try {
@@ -52,6 +58,11 @@ public class Lab2 {
             }
         }
 
+        /**
+         * A train leaves a critival section. It signals the condition to assure other trains that the track is now
+         * clear.
+         */
+
         public void leave() {
             lock.lock();
             try {
@@ -62,6 +73,10 @@ public class Lab2 {
             }
         }
 
+        /**
+         * Checks if there's a train on the track. If there isn't the train takes control of the section.
+         * @return  true if the train was able to acquire the monitor, false if there was another train on the track
+         */
         public boolean tryEnter() {
             if(trainOnTrack) {
                 return false;
