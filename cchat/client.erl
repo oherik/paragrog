@@ -59,7 +59,8 @@ handle(St, whoami) ->
 %% Change nick
 handle(St, {nick, Nick}) ->
     % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    St_update = St#client_st{nick = Nick},
+    {reply, ok, St_update} ;
 
 %% Incoming message
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
