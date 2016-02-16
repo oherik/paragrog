@@ -23,13 +23,19 @@ initial_state(Nick, GUIName) ->
 
 %% Connect to server
 handle(St, {connect, Server}) ->
-    Data = "hello?",
+    Data = {connect, St#client_st.nick},
     io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
     Response = genserver:request(ServerAtom, Data),
     io:fwrite("Client received: ~p~n", [Response]),
-    % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    Message = if Response == ok -> ok;
+                Response == user_already_connected -> {error, user_already_connected, "User is already connected"};
+                true -> {error, server_not_reached, "Server could not be reached"}
+            end,
+    St_update = if Response == ok -> St#client_st{server = ServerAtom};
+                true -> St
+            end,
+    {reply, Message, St_update} ;
 
 %% Disconnect from server
 handle(St, disconnect) ->

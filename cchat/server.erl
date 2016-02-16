@@ -7,7 +7,7 @@
 
 % Produce initial state
 initial_state(ServerName) ->
-    #server_st{}.
+    #server_st{serverName = ServerName, connectedUsers = []}.
 
 %% ---------------------------------------------------------------------------
 
@@ -18,8 +18,28 @@ initial_state(ServerName) ->
 %% {reply, Reply, NewState}, where Reply is the reply to be sent to the client
 %% and NewState is the new state of the server.
 
-handle(St, Request) ->
-    io:fwrite("Server received: ~p~n", [Request]),
-    Response = "hi!",
-    io:fwrite("Server is sending: ~p~n", [Response]),
-    {reply, Response, St}.
+handle(St, {connect, User}) ->
+    io:fwrite("Server received: ~p~n", [User]),
+    case listFind(User, St#server_st.connectedUsers) of
+    			true -> {reply, user_already_connected, St};
+    			false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [User])},
+    			io:fwrite("Connected users: ~p~n", [lists:last(Updated_St#server_st.connectedUsers)]),
+    			{reply, ok, Updated_St}
+	end.
+
+
+
+
+
+listFind ( Element, [] ) ->
+    false;
+
+listFind ( Element, [ Item | ListTail ] ) ->
+    case ( iolist_equal(Item, Element) ) of
+        true    ->  true;
+        false   ->  listFind(Element, ListTail)
+    end.
+
+iolist_equal(A, B) ->
+    iolist_to_binary(A) =:= iolist_to_binary(B).
+    
