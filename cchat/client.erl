@@ -65,8 +65,7 @@ handle(St, whoami) ->
 %% Change nick
 handle(St, {nick, Nick}) ->
     % {reply, ok, St} ;
-    St_update = St#client_st{nick = Nick},
-    {reply, ok, St_update} ;
+    {reply, ok, St#client_st{nick = Nick}} ;
 
 %% Incoming message
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
