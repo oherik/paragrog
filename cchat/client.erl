@@ -44,7 +44,7 @@ handle(St, {connect, Server}) ->
 %% Disconnect from server
 handle(St, disconnect) ->
     Data = {disconnect, St#client_st.nick},
-    Response = if St#client_st.server == [] -> user_not_connected;
+    Response = if St#client_st.server == '' -> user_not_connected;
                 true -> try genserver:request(St#client_st.server, Data)
                     catch
                         _:_ -> server_not_reached
@@ -55,7 +55,7 @@ handle(St, disconnect) ->
                 Response == user_not_connected -> {error, user_not_connected, "User is not connected"};
                 true -> {error, server_not_reached, "Server could not be reached"}
             end,
-    St_update = if Response == ok -> St#client_st{server = []};
+    St_update = if Response == ok -> St#client_st{server = ''};
                  true -> St
             end,
     % {reply, ok, St} ;
