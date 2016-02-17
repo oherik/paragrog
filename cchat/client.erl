@@ -26,11 +26,15 @@ handle(St, {connect, Server}) ->
     Data = {connect, St#client_st.nick},
     io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
-    Response = genserver:request(ServerAtom, Data),
+    Response = try genserver:request(ServerAtom, Data)
+        catch 
+           _:_ -> server_not_reached
+        end,
     io:fwrite("Client received: ~p~n", [Response]),
     Message = if Response == ok -> ok;
                 Response == user_already_connected -> {error, user_already_connected, "User is already connected"};
-                true -> {error, server_not_reached, "Server could not be reached"}
+                Response ==  server_not_reached -> {error, server_not_reached, "Server could not be reached"};
+                true -> {'EXIT', "Something went wrong"}
             end,
     St_update = if Response == ok -> St#client_st{server = ServerAtom};
                 true -> St
@@ -39,8 +43,23 @@ handle(St, {connect, Server}) ->
 
 %% Disconnect from server
 handle(St, disconnect) ->
+    Data = {disconnect, St#client_st.nick},
+    Response = if St#client_st.server == [] -> user_not_connected;
+                true -> try genserver:request(St#client_st.server, Data)
+                    catch
+                        _:_ -> server_not_reached
+                    end
+             end,
+    Message = if Response == ok -> ok;
+                Response == leave_channels_first -> {error, leave_channels_first, "User has to leave all channels first"};
+                Response == user_not_connected -> {error, user_not_connected, "User is not connected"};
+                true -> {error, server_not_reached, "Server could not be reached"}
+            end,
+    St_update = if Response == ok -> St#client_st{server = []};
+                 true -> St
+            end,
     % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    {reply, Message, St_update} ;
 
 % Join channel
 handle(St, {join, Channel}) ->

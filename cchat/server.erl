@@ -7,7 +7,9 @@
 
 % Produce initial state
 initial_state(ServerName) ->
-    #server_st{serverName = ServerName, connectedUsers = []}.
+    #server_st{serverName = ServerName}.
+
+
 
 %% ---------------------------------------------------------------------------
 
@@ -23,10 +25,15 @@ handle(St, {connect, User}) ->
     case listFind(User, St#server_st.connectedUsers) of
     			true -> {reply, user_already_connected, St};
     			false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [User])},
-    			io:fwrite("Connected users: ~p~n", [lists:last(Updated_St#server_st.connectedUsers)]),
     			{reply, ok, Updated_St}
+	end;
+handle(St, {disconnect, User}) ->
+	io:fwrite("Server received: ~p~n", [User]),
+	case channelFind(User, St#server_st.channelList) of
+		true -> {reply, leave_channels_first, St};
+		false -> Updated_St = St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)},
+		{reply, ok, Updated_St}
 	end.
-
 
 
 
@@ -43,3 +50,12 @@ listFind ( Element, [ Item | ListTail ] ) ->
 iolist_equal(A, B) ->
     iolist_to_binary(A) =:= iolist_to_binary(B).
     
+channelFind( Element, []) ->
+	false;
+
+channelFind( Element, [Item | ListTail]) ->
+	case listFind(Element, Item)  of
+		true 	-> true;
+		false	-> channelFind(Element, ListTail)
+	end.
+
