@@ -36,19 +36,21 @@ handle(St, {disconnect, User}) ->
 	end;
 handle(St, {join, User, Channel}) ->
 	io:fwrite("Server received: ~p~n", [Channel]),
-	Index = index_of(Channel, St#server_st.channelList),
-	case Index == not_found of
-		true -> {reply, ok, St#server_st{channelList = lists:append(St#server_st.channelList, #channel_st{channelName = Channel, channelUsers = [User]})}};
-		false -> 
-		CurrentChannel = lists:nth(Index, St#server_st.channelList),
-		case lists:member(User, CurrentChannel#channel_st.channelUsers) of
+	ChannelList = St#server_st.channelList,
+	case CurrentChannel = lists:keyfind(Channel,#channel_st.channelName,ChannelList) of
+		false ->
+		  {reply, ok, St#server_st{channelList = lists:append(St#server_st.channelList, #channel_st{channelName = Channel, channelUsers = [User]})}};
+		 true->
+			io:fwrite(CurrentChannel),
+			case lists:member(User, CurrentChannel#channel_st.channelUsers) of
 			true -> {reply, user_already_joined, St};
 			false ->  
-			
 			Channel_update = CurrentChannel#channel_st{channelUsers = lists:append(CurrentChannel#channel_st.channelUsers, User)},
 			{reply, ok, St#server_st{channelList = lists:append(Channel_update, lists:delete(CurrentChannel, St#server_st.channelList))}}
-		end
-	end.
+		end                       
+    end.
+   
+	
     
 existsInChannels( Element, []) ->
 	false;
@@ -63,7 +65,11 @@ existsInChannels( Element, [Item | ListTail]) ->
 
 index_of(Item, List) -> index_of(Item, List, 1).
 
-index_of(_, [], _)  -> not_found;
-index_of(Item, [#channel_st{channelName = Item}|_], Index) -> Index;
+index_of(_, [], _)  -> 
+	io:fwrite(" not found "),
+not_found;
+index_of(Item, [#channel_st{channelName = Item}|_], Index) -> 
+		io:fwrite("found "),
+		Index;
 index_of(Item, [_|Tail], Index) -> index_of(Item, Tail, Index+1).
 

@@ -66,10 +66,11 @@ handle(St, disconnect) ->
 % Join channel
 handle(St, {join, Channel}) ->
     Data = {join, St#client_st.nick, Channel},
-    Response = try genserver:request(St#client_st.server, Data)
-        catch
-            _:_ -> server_not_reached
-        end,
+    Response =  genserver:request(St#client_st.server, Data),
+    %    catch
+          %  _:_ -> server_not_reached
+         %   io:fwrite()
+      %  end,
     Message = if Response == ok -> ok;
                 Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
                 Response == user_already_joined -> {error, user_already_joined, "User already joined the channel"};
