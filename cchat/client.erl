@@ -9,7 +9,8 @@
 initial_state(Nick, GUIName) ->
         #client_st { 
         nick = list_to_atom(Nick),
-        gui = list_to_atom(GUIName)
+        gui = list_to_atom(GUIName),
+        server = ''
     }.
 
 %% ---------------------------------------------------------------------------
