@@ -22,40 +22,44 @@ initial_state(ServerName) ->
 
 handle(St, {connect, User}) ->
     io:fwrite("Server received: ~p~n", [User]),
-    case listFind(User, St#server_st.connectedUsers) of
+    case lists:member(User, St#server_st.connectedUsers) of
     			true -> {reply, user_already_connected, St};
     			false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [User])},
-    			{reply, ok, Updated_St}
+    				{reply, ok, Updated_St}
 	end;
 handle(St, {disconnect, User}) ->
 	io:fwrite("Server received: ~p~n", [User]),
-	case channelFind(User, St#server_st.channelList) of
+	case existsInChannels(User, St#server_st.channelList) of
 		true -> {reply, leave_channels_first, St};
 		false -> Updated_St = St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)},
-		{reply, ok, Updated_St}
+			{reply, ok, Updated_St}
+	end;
+handle(St, {join, User, Channel}) ->
+	io:fwrite("Server received: ~p~n", [User]),
+	Index = index_of(Channel, St#server_st.channelList),
+	case Index == not_found of
+		true -> {reply, ok, St#server_st{channelList = lists:append(St#server_st.channelList, #channel_st{channelName = Channel, channelUsers = [User]})}};
+		false -> case lists:member(User, lists:nth(Index, St#server_st.channelList)) of
+			true -> {reply, user_already_joined, St};
+			false ->  List = lists:nth(Index, St#server_st.channelList),
+				{reply, ok, List#channel_st{channelUsers = lists:append(List#channel_st.channelUsers, User)}}
+		end
 	end.
-
-
-
-
-listFind ( Element, [] ) ->
-    false;
-
-listFind ( Element, [ Item | ListTail ] ) ->
-    case ( iolist_equal(Item, Element) ) of
-        true    ->  true;
-        false   ->  listFind(Element, ListTail)
-    end.
-
-iolist_equal(A, B) ->
-    iolist_to_binary(A) =:= iolist_to_binary(B).
     
-channelFind( Element, []) ->
+existsInChannels( Element, []) ->
 	false;
 
-channelFind( Element, [Item | ListTail]) ->
-	case listFind(Element, Item)  of
+existsInChannels( Element, [Item | ListTail]) ->
+	case lists:member(Element, Item)  of
 		true 	-> true;
-		false	-> channelFind(Element, ListTail)
+		false	-> existsInChannels(Element, ListTail)
 	end.
+
+
+
+index_of(Item, List) -> index_of(Item, List, 1).
+
+index_of(_, [], _)  -> not_found;
+index_of(Item, [#channel_st{channelName = Item}|_], Index) -> Index;
+index_of(Item, [_|Tail], Index) -> index_of(Item, Tail, Index+1).
 
