@@ -35,11 +35,11 @@ handle(St, {disconnect, User}) ->
 			{reply, ok, Updated_St}
 	end;
 handle(St, {join, User, Channel}) ->
-	io:fwrite("Server received: ~p~n", [User]),
+	io:fwrite("Server received: ~p~n", [Channel]),
 	Index = index_of(Channel, St#server_st.channelList),
 	case Index == not_found of
 		true -> {reply, ok, St#server_st{channelList = lists:append(St#server_st.channelList, #channel_st{channelName = Channel, channelUsers = [User]})}};
-		false -> case lists:member(User, lists:nth(Index, St#server_st.channelList)) of
+		false -> case lists:member(User, (lists:nth(Index, St#server_st.channelList))#channel_st.channelUsers) of
 			true -> {reply, user_already_joined, St};
 			false ->  List = lists:nth(Index, St#server_st.channelList),
 				{reply, ok, List#channel_st{channelUsers = lists:append(List#channel_st.channelUsers, User)}}
