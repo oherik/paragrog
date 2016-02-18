@@ -66,11 +66,10 @@ handle(St, disconnect) ->
 % Join channel
 handle(St, {join, Channel}) ->
     Data = {join, St#client_st.nick, list_to_atom(Channel)},
-    Response =  genserver:request(St#client_st.server, Data),
-    %    catch
-          %  _:_ -> server_not_reached
-         %   io:fwrite()
-      %  end,
+    Response = try genserver:request(St#client_st.server, Data)
+        catch
+            _:_ -> server_not_reached
+        end,
     Message = if Response == ok -> ok;
                 Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
                 Response == user_already_joined -> {error, user_already_joined, "User already joined the channel"};
@@ -80,8 +79,18 @@ handle(St, {join, Channel}) ->
 
 %% Leave channel
 handle(St, {leave, Channel}) ->
-    % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+Data = {leave, St#client_st.nick, list_to_atom(Channel)},
+Response =  try genserver:request(St#client_st.server, Data)
+      catch
+          _:_ -> server_not_reached
+        end,
+    Message = if Response == ok -> ok;
+                Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
+                Response == user_not_joined -> {error, user_not_joined, "User has not joined the channel"};
+                Response == channel_not_found -> {error, channel_not_found, "The channel does not exist"};
+                true -> {'EXIT', "Something went wrong"}
+            end,
+    {reply, Message, St};
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->

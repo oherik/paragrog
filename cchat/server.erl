@@ -46,6 +46,19 @@ handle(St, {join, User, Channel}) ->
 			false ->  
 			{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:append(Users, User)})}}
 		end                       
+    end;
+handle(St, {leave, User, Channel}) ->
+	io:fwrite("Server received: ~p~n", [Channel]),
+	CurrentChannel = lists:keyfind(Channel,1,St#server_st.channelList),
+	if  CurrentChannel == false ->
+		  {reply, channel_not_found, St};
+		 true->
+		 	{_,Users} = CurrentChannel,
+			case lists:member(User, Users) of
+			true -> {reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:delete(User,Users)})}};
+			false -> {reply, user_not_joined, St}
+	
+		end                       
     end.
    
 	
