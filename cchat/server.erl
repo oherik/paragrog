@@ -7,7 +7,11 @@
 
 % Produce initial state
 initial_state(ServerName) ->
-    #server_st{serverName = ServerName}.
+    #server_st{serverName = ServerName,
+    	connectedUsers = [],
+    	channelList = [{key, value}]
+    	}
+    	.
 
 
 
@@ -35,18 +39,16 @@ handle(St, {disconnect, User}) ->
 			{reply, ok, Updated_St}
 	end;
 handle(St, {join, User, Channel}) ->
-	io:fwrite("Server received: ~p~n", [Channel]),
 	ChannelList = St#server_st.channelList,
-	case CurrentChannel = lists:keyfind(Channel,#channel_st.channelName,ChannelList) of
-		false ->
-		  {reply, ok, St#server_st{channelList = lists:append(St#server_st.channelList, #channel_st{channelName = Channel, channelUsers = [User]})}};
-		 true->
-			io:fwrite(CurrentChannel),
-			case lists:member(User, CurrentChannel#channel_st.channelUsers) of
-			true -> {reply, user_already_joined, St};
-			false ->  
-			Channel_update = CurrentChannel#channel_st{channelUsers = lists:append(CurrentChannel#channel_st.channelUsers, User)},
-			{reply, ok, St#server_st{channelList = lists:append(Channel_update, lists:delete(CurrentChannel, St#server_st.channelList))}}
+	case CurrentChannel = proplists:lookup(Channel, ChannelList) of
+		none -> 
+			{reply, ok, St#server_st{channelList = lists:append(ChannelList, [{Channel, [User]}])}};%proplists:append_values(Channel, [User])}};
+		{ChannelName,MemberList} ->
+			case lists:member(User, MemberList) of
+				false ->
+				ChannelUpdate = {ChannelName, lists:append(MemberList, User)},
+				{reply, ok, St#server_st{channelList = lists:append(ChannelUpdate, lists:delete(CurrentChannel, St#server_st.channelList))}};
+				true -> io:fwrite("medlem ~n"), {reply, user_already_joined, St}
 		end                       
     end.
    
@@ -60,16 +62,3 @@ existsInChannels( Element, [Item | ListTail]) ->
 		true 	-> true;
 		false	-> existsInChannels(Element, ListTail)
 	end.
-
-
-
-index_of(Item, List) -> index_of(Item, List, 1).
-
-index_of(_, [], _)  -> 
-	io:fwrite(" not found "),
-not_found;
-index_of(Item, [#channel_st{channelName = Item}|_], Index) -> 
-		io:fwrite("found "),
-		Index;
-index_of(Item, [_|Tail], Index) -> index_of(Item, Tail, Index+1).
-
