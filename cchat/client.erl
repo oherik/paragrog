@@ -96,14 +96,10 @@ handle(St, whoami) ->
 %% Change nick
 handle(St, {nick, Nick}) ->
     if St#client_st.server == ''->
-            Message = ok,
-            NewState = St#client_st{nick = list_to_atom(Nick)};
+           {reply, ok, St#client_st{nick = list_to_atom(Nick)}};
         true ->
-            Message =  {error, user_already_connected, "The user needs to disconnect before switching nickname."},
-            NewState = St
-    end,
-{reply, Message, NewState};
-
+            {reply, {error, user_already_connected, "The user needs to disconnect before switching nickname."}, St}
+    end;
 
 %% Incoming message
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
