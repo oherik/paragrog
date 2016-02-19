@@ -11,7 +11,9 @@ initial_state(Nick, GUIName) ->
         nick = list_to_atom(Nick),
         gui = list_to_atom(GUIName),
         server = ''
-    }.
+    }
+
+    .
 
 %% ---------------------------------------------------------------------------
 
@@ -65,7 +67,7 @@ handle(St, disconnect) ->
 
 % Join channel
 handle(St, {join, Channel}) ->
-    Data = {join, St#client_st.nick, list_to_atom(Channel)},
+    Data = {join, St#client_st.nick, self(), list_to_atom(Channel)},
     Response =  genserver:request(St#client_st.server, Data),
     %    catch
           %  _:_ -> server_not_reached
@@ -85,16 +87,24 @@ handle(St, {leave, Channel}) ->
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
+    Data = {send, St#client_st.nick, Channel, Msg},
+    Response = genserver:request(St#client_st.server,Data),
+    Message = if Response == ok -> ok;
+                Response == channel_not_found -> {error, channel_not_found, "The current channel couldn't be found"};
+                Response == user_not_joined -> {error, user_not_joined, "User hasn't joined the channel"};
+                true -> {'EXIT', "Something went wrong"}
+            end,
     % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    {reply, Message, St} ;
 
 %% Get current nick
 handle(St, whoami) ->
     % {reply, "nick", St} ;
     {reply, atom_to_list(St#client_st.nick), St} ;
 
-%% Change nick
+%% Change nickvideo
 handle(St, {nick, Nick}) ->
+%% TODO gör så man bara kan ändra när man är disconnectad
     % {reply, ok, St} ;
     {reply, ok, St#client_st{nick = list_to_atom(Nick)}} ;
 
