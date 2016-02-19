@@ -6,4 +6,4 @@
 
 % This record defines the structure of the server process.
 % Add whatever other fields you need.
--record(server_st, {serverName, connectedUsers = [], channelList = [{channelName, channelUsers = []}]}).
+-record(server_st, {serverName, connectedUsers = [], channelList = [{"", []}]}).

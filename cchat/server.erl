@@ -13,8 +13,6 @@ initial_state(ServerName) ->
     	}
     	.
 
-
-
 %% ---------------------------------------------------------------------------
 
 %% handle/2 handles requests from clients
@@ -38,27 +36,26 @@ handle(St, {disconnect, User}) ->
 		false -> Updated_St = St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)},
 			{reply, ok, Updated_St}
 	end;
+
 handle(St, {join, User, Channel}) ->
-	ChannelList = St#server_st.channelList,
-	case CurrentChannel = proplists:lookup(Channel, ChannelList) of
-		none -> 
-			{reply, ok, St#server_st{channelList = lists:append(ChannelList, [{Channel, [User]}])}};%proplists:append_values(Channel, [User])}};
-		{ChannelName,MemberList} ->
-			case lists:member(User, MemberList) of
-				false ->
-				ChannelUpdate = {ChannelName, lists:append(MemberList, User)},
-				{reply, ok, St#server_st{channelList = lists:append(ChannelUpdate, lists:delete(CurrentChannel, St#server_st.channelList))}};
-				true -> io:fwrite("medlem ~n"), {reply, user_already_joined, St}
+	io:fwrite("Server received: ~p~n", [Channel]),
+	case  lists:keyfind(Channel,1,St#server_st.channelList) of 
+		false ->
+		  {reply, ok, St#server_st{channelList = lists:append(St#server_st.channelList, [{Channel, [User]}])}};
+		 {_,Users}->
+			case lists:member(User, Users) of
+				true -> {reply, user_already_joined, St};
+				false ->  
+					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:append(Users, User)})}}
 		end                       
     end.
-   
-	
     
 existsInChannels( Element, []) ->
 	false;
 
 existsInChannels( Element, [Item | ListTail]) ->
-	case lists:member(Element, Item)  of
+	{_,X} = Item,
+	case lists:member(Element, X)  of
 		true 	-> true;
 		false	-> existsInChannels(Element, ListTail)
 	end.
