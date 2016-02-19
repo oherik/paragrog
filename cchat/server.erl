@@ -45,9 +45,7 @@ handle(St, {join, User, Channel}) ->
 				false ->  
 					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:append(Users, User)})}}
 		end                       
-    end.
-   
-	
+    end.	
     
 existsInChannels( Element, []) ->
 	false;
