@@ -35,16 +35,15 @@ handle(St, {disconnect, User}) ->
 			{reply, ok, Updated_St}
 	end;
 handle(St, {join, User, Channel}) ->
-	io:fwrite("Server received: ~p~n", [Channel]),
-	CurrentChannel = lists:keyfind(Channel,1,St#server_st.channelList),
-	if  CurrentChannel == false ->
+	io:fwrite("Server received: ~p~n", [Channel]), 
+	case lists:keyfind(Channel,1,St#server_st.channelList) of
+		false ->
 		  {reply, ok, St#server_st{channelList = lists:append(St#server_st.channelList, [{Channel, [User]}])}};
-		 true->
-		 	{_,Users} = CurrentChannel,
+		 {_,Users} ->
 			case lists:member(User, Users) of
-			true -> {reply, user_already_joined, St};
-			false ->  
-			{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:append(Users, User)})}}
+				true -> {reply, user_already_joined, St};
+				false ->  
+					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:append(Users, User)})}}
 		end                       
     end.
    
