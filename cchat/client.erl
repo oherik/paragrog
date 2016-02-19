@@ -24,7 +24,7 @@ initial_state(Nick, GUIName) ->
 
 %% Connect to server
 handle(St, {connect, Server}) ->
-    Data = {connect, St#client_st.nick},
+    Data = {connect, St#client_st.nick, St#client_st.gui},
     io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
     Response = try genserver:request(ServerAtom, Data)
@@ -66,10 +66,10 @@ handle(St, disconnect) ->
 % Join channel
 handle(St, {join, Channel}) ->
     Data = {join, St#client_st.nick, list_to_atom(Channel)},
-    Response = try genserver:request(St#client_st.server, Data)
-        catch
-            _:_ -> server_not_reached
-        end,
+    Response =  genserver:request(St#client_st.server, Data),
+    %    catch
+    %        _:_ -> server_not_reached
+    %    end,
     Message = if Response == ok -> ok;
                 Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
                 Response == user_already_joined -> {error, user_already_joined, "User already joined the channel"};
@@ -79,8 +79,8 @@ handle(St, {join, Channel}) ->
 
 %% Leave channel
 handle(St, {leave, Channel}) ->
-Data = {leave, St#client_st.nick, list_to_atom(Channel)},
-Response =  try genserver:request(St#client_st.server, Data)
+    Data = {leave, St#client_st.nick, list_to_atom(Channel)},
+    Response =  try genserver:request(St#client_st.server, Data)
       catch
           _:_ -> server_not_reached
         end,
@@ -94,8 +94,18 @@ Response =  try genserver:request(St#client_st.server, Data)
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
-    % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+   Data = {msg_from_GUI, St#client_st.nick, list_to_atom(Channel), Msg},
+    Response =  genserver:request(St#client_st.server, Data),
+      %catch
+       %   _:_ -> server_not_reached
+        %end,
+    Message = if Response == ok -> ok;
+                Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
+                Response == user_not_joined -> {error, user_not_joined, "User has not joined the channel"};
+                Response == channel_not_found -> {error, channel_not_found, "The channel does not exist"};
+                true -> {'EXIT', "Something went wrong"}
+            end,
+    {reply, Message, St};
 
 %% Get current nick
 handle(St, whoami) ->
@@ -105,7 +115,10 @@ handle(St, whoami) ->
 %% Change nick
 handle(St, {nick, Nick}) ->
     % {reply, ok, St} ;
-    {reply, ok, St#client_st{nick = list_to_atom(Nick)}} ;
+    if St#client_st.server == '' -> 
+        {reply, ok, St#client_st{nick = list_to_atom(Nick)}} ;
+        true -> {reply, {error, user_already_connected, "Changing nick is not allowed when connected"}, St}
+    end;
 
 %% Incoming message
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->

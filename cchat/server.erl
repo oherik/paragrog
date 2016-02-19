@@ -20,18 +20,18 @@ initial_state(ServerName) ->
 %% {reply, Reply, NewState}, where Reply is the reply to be sent to the client
 %% and NewState is the new state of the server.
 
-handle(St, {connect, User}) ->
+handle(St, {connect, User, Gui}) ->
     io:fwrite("Server received: ~p~n", [User]),
-    case lists:member(User, St#server_st.connectedUsers) of
-    			true -> {reply, user_already_connected, St};
-    			false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [User])},
-    				{reply, ok, Updated_St}
+    CurrentUser = lists:keyfind(User, 1, St#server_st.connectedUsers),
+    if CurrentUser == false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [{User, Gui}])},
+    				{reply, ok, Updated_St};
+    			true -> {reply, user_already_connected, St}
 	end;
 handle(St, {disconnect, User}) ->
 	io:fwrite("Server received: ~p~n", [User]),
 	case existsInChannels(User, St#server_st.channelList) of
 		true -> {reply, leave_channels_first, St};
-		false -> Updated_St = St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)},
+		false -> Updated_St = St#server_st{connectedUsers = lists:keydelete(User,1, St#server_st.connectedUsers)},
 			{reply, ok, Updated_St}
 	end;
 handle(St, {join, User, Channel}) ->
@@ -59,11 +59,22 @@ handle(St, {leave, User, Channel}) ->
 			false -> {reply, user_not_joined, St}
 	
 		end                       
-    end.
+    end;
+handle(St, {msg_from_GUI, User, Channel, Msg}) ->
+	CurrentChannel = lists:keyfind(Channel,1,St#server_st.channelList),
+	if CurrentChannel == false -> {reply, channel_not_found, St};
+		true -> 
+			{_, Users} = CurrentChannel,
+			case lists:member(User, Users) of
+				true -> sendMessage(St, Msg, User, Channel, Users),
+				{reply, ok, St};
+				false -> {reply, user_not_joined, St}
+			end
+		end.
    
 	
     
-existsInChannels( Element, []) ->
+existsInChannels( _, []) ->
 	false;
 
 existsInChannels( Element, [Item | ListTail]) ->
@@ -72,4 +83,16 @@ existsInChannels( Element, [Item | ListTail]) ->
 		true 	-> true;
 		false	-> existsInChannels(Element, ListTail)
 	end.
+
+sendMessage(St, Msg, User, Channel, [Head | Tail]) ->
+	if User == Head -> sendMessage(St, Msg, User, Channel, Tail);
+		true ->
+		CurrentUser = lists:keyfind(User, 1, St#server_st.connectedUsers),
+		{_,Gui} = CurrentUser,
+		genserver:request(Gui, {incoming_msg, Channel, User, Msg}),
+		sendMessage(St, Msg, User, Channel, Tail)
+	end;
+
+sendMessage(_,_,_,_,[]) ->
+	true.
 
