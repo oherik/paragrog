@@ -11,7 +11,7 @@ initial_state(Nick, GUIName) ->
         nick = list_to_atom(Nick),
         gui = GUIName,
         server = '',
-        pid = pid
+        pid = ''
     }
     .
 

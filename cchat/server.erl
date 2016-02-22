@@ -34,9 +34,9 @@ handle(St, {connect, User}) ->
 handle(St, {disconnect, User}) ->
 	io:fwrite("Server received: ~p~n", [User]),
 	case existsInChannels(User, St#server_st.channelList) of
-		true -> {reply, leave_channels_first, St};
 		false -> Updated_St = St#server_st{connectedUsers = lists:keydelete(User,1, St#server_st.connectedUsers)},
-			{reply, ok, Updated_St}
+			{reply, ok, Updated_St};
+		true -> {reply, leave_channels_first, St}
 	end;
 
 handle(St, {join, User, Client, Channel}) ->
@@ -48,7 +48,7 @@ handle(St, {join, User, Client, Channel}) ->
 			case lists:keymember(User,1,Users) of
 				true -> {reply, user_already_joined, St};
 				false ->  
-					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:append(Users, [{User, Client}])})}}
+					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 2, St#server_st.channelList, {Channel, lists:append(Users, [{User, Client}])})}}
 		end                       
     end;
 
@@ -60,7 +60,7 @@ handle(St, {leave, User, Client, Channel}) ->
 		 true->
 		 	{_,Users} = CurrentChannel,
 			case lists:keymember(User,1,Users) of
-			true -> {reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:delete(Users, [{User, Client}])})}};
+			true -> {reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 2, St#server_st.channelList, {Channel, lists:delete(Users, [{User, Client}])})}};
 			false -> {reply, user_not_joined, St}
 	
 		end                       
@@ -87,12 +87,17 @@ send([ClientPID|Tail], Channel, User, Msg) ->
 	genserver:request(ClientPID, {incoming_msg, Channel, User, Msg}),
 	send(Tail, Channel, User, Msg).
 		
-existsInChannels( Element, []) ->
-	false;
 existsInChannels( Element, [Item | Tail]) ->
 	{_,X} = Item,
-	case lists:member(Element, X)  of
-		true 	-> true;
-		false	-> existsInChannels(Element, Tail)
-	end.
+	case lists:keymember(Element,1, X)  of
+		false	-> 
+			io:fwrite("listan ~p ~n", [X]),
+			existsInChannels(Element, Tail);
+		true 	-> 
+			io:fwrite("listan ~p ~n", [X]),
+			io:fwrite("sann ffs ~p ~n", [X]),
+		true
+	end;
+	existsInChannels( Element, []) ->
+	false.
 
