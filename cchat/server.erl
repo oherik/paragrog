@@ -43,6 +43,7 @@ handle(St, {join, User, Channel}) ->
 			case lists:member(User, Users) of
 				true -> {reply, user_already_joined, St};
 				false ->  
+
 					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:append(Users, [User])})}}
 		end                       
     end;
@@ -76,7 +77,6 @@ handle(St, {msg_from_GUI, User, Channel, Msg}) ->
 			end
 		end.
    
-	
     
 existsInChannels( _, []) ->
 	false;
