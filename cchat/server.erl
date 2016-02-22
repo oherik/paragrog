@@ -59,8 +59,8 @@ handle(St, {send, User, Channel, Msg}) ->
 				case lists:keymember(User,1,Users) of
 					false ->  io:fwrite("not found"),{reply, user_not_joined, St};
 					true -> 
-						 Usernames = [ClientPID || {Nick, ClientPID} <- Users],% Nick /= User],  TODO lägg in detta till vänster så man inte kan skicka till sig själv
-						 send(Usernames, Channel, User, Msg),
+						 PIDs = [ClientPID || {Nick, ClientPID} <- Users, Nick /= User],%  TODO lägg in detta till vänster så man inte kan skicka till sig själv
+						 send(PIDs, Channel, User, Msg),
 			  			{reply, ok, St}
 
 				end

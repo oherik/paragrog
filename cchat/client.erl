@@ -9,7 +9,7 @@
 initial_state(Nick, GUIName) ->
         St = #client_st { 
         nick = list_to_atom(Nick),
-        gui = list_to_atom(GUIName),
+        gui = GUIName,
         server = '',
         pid = pid
     }
@@ -26,10 +26,7 @@ initial_state(Nick, GUIName) ->
 
 %% Connect to server
 handle(St, {connect, Server}) ->
-    register(testest, self()),
     Data = {connect, St#client_st.nick},
-    io:fwrite("self: ~p~n", [self()]),
-    io:fwrite("pid: ~p~n", [St#client_st.pid]),
     io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
     Response = try genserver:request(ServerAtom, Data)
@@ -42,9 +39,10 @@ handle(St, {connect, Server}) ->
                 Response ==  server_not_reached -> {error, server_not_reached, "Server could not be reached"};
                 true -> {'EXIT', "Something went wrong"}
             end,
-    St_update = if Response == ok -> St#client_st{server = ServerAtom};
+    St_update = if Response == ok -> St#client_st{server = ServerAtom, pid = self()};
                 true -> St
             end,
+            io:fwrite("pid: ~p~n", [St#client_st.pid]),
     {reply, Message, St_update} ;
 
 %% Disconnect from server
@@ -113,5 +111,6 @@ handle(St, {nick, Nick}) ->
 
 %% Incoming message
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
-    gen_server:call(list_to_atom(GUIName), {msg_to_GUI, Channel, Name++"> "++Msg}),
+io:fwrite("Fick meddelande från ~p~n", [Name]),
+    gen_server:call(list_to_atom(GUIName), {msg_to_GUI, Channel, atom_to_list(Name)++"> "++Msg}),
     {reply, ok, St}.
