@@ -24,7 +24,7 @@ initial_state(Nick, GUIName) ->
 
 %% Connect to server
 handle(St, {connect, Server}) ->
-    Data = {connect, St#client_st.nick, St#client_st.gui},
+    Data = {connect, St#client_st.nick, self()},
     io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
     Response = try genserver:request(ServerAtom, Data)
@@ -94,7 +94,7 @@ handle(St, {leave, Channel}) ->
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
-   Data = {msg_from_GUI, St#client_st.nick, list_to_atom(Channel), Msg},
+   Data = {msg_from_GUI, St#client_st.nick, Channel, Msg},
     Response =  genserver:request(St#client_st.server, Data),
       %catch
        %   _:_ -> server_not_reached
@@ -122,5 +122,5 @@ handle(St, {nick, Nick}) ->
 
 %% Incoming message
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
-    gen_server:call(list_to_atom(GUIName), {msg_to_GUI, Channel, Name++"> "++Msg}),
+    gen_server:call(GUIName, {msg_to_GUI, Channel, atom_to_list(Name)++"> "++Msg}),
     {reply, ok, St}.
