@@ -20,6 +20,9 @@ initial_state(ServerName) ->
 %% {reply, Reply, NewState}, where Reply is the reply to be sent to the client
 %% and NewState is the new state of the server.
 
+%   TODO Bind nicket till PIDet här och skicka med
+
+
 handle(St, {connect, User}) ->
     io:fwrite("Server received: ~p~n", [User]),
     case lists:member(User, St#server_st.connectedUsers) of
@@ -66,6 +69,7 @@ handle(St, {send, User, Channel, Msg}) ->
 send([], Channel, User, Msg) -> ok;
 send([ClientPID|Tail], Channel, User, Msg) ->
 	io:fwrite("Test: mottagerens PID är ~p~n", [ClientPID]), %%TODO Debug
+	%% TODO lägg till if inte sändaren
 	genserver:request(ClientPID, {incoming_msg, Channel, User, Msg}),
 	send(Tail, Channel, User, Msg).
 		

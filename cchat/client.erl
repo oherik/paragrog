@@ -7,12 +7,12 @@
 
 %% Produce initial state
 initial_state(Nick, GUIName) ->
-        #client_st { 
+        St = #client_st { 
         nick = list_to_atom(Nick),
         gui = list_to_atom(GUIName),
-        server = ''
+        server = '',
+        pid = pid
     }
-
     .
 
 %% ---------------------------------------------------------------------------
@@ -26,7 +26,10 @@ initial_state(Nick, GUIName) ->
 
 %% Connect to server
 handle(St, {connect, Server}) ->
+    register(testest, self()),
     Data = {connect, St#client_st.nick},
+    io:fwrite("self: ~p~n", [self()]),
+    io:fwrite("pid: ~p~n", [St#client_st.pid]),
     io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
     Response = try genserver:request(ServerAtom, Data)
@@ -67,7 +70,7 @@ handle(St, disconnect) ->
 
 % Join channel
 handle(St, {join, Channel}) ->
-    Data = {join, St#client_st.nick, self(), list_to_atom(Channel)},
+    Data = {join, St#client_st.nick, St#client_st.pid, list_to_atom(Channel)},
     Response =  genserver:request(St#client_st.server, Data),
     %    catch
           %  _:_ -> server_not_reached
