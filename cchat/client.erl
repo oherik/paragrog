@@ -83,8 +83,18 @@ handle(St, {join, Channel}) ->
 
 %% Leave channel
 handle(St, {leave, Channel}) ->
-    % {reply, ok, St} ;
-    {reply, {error, not_implemented, "Not implemented"}, St} ;
+    Data = {leave, St#client_st.nick, St#client_st.pid, list_to_atom(Channel)},
+    Response =  try genserver:request(St#client_st.server, Data)
+      catch
+          _:_ -> server_not_reached
+        end,
+    Message = if Response == ok -> ok;
+                Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
+                Response == user_not_joined -> {error, user_not_joined, "User has not joined the channel"};
+                Response == channel_not_found -> {error, channel_not_found, "The channel does not exist"};
+                true -> {'EXIT', "Something went wrong"}
+            end,
+    {reply, Message, St};
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
@@ -103,11 +113,12 @@ handle(St, whoami) ->
     % {reply, "nick", St} ;
     {reply, atom_to_list(St#client_st.nick), St} ;
 
-%% Change nickvideo
+%% Change nick
 handle(St, {nick, Nick}) ->
-%% TODO gör så man bara kan ändra när man är disconnectad
-    % {reply, ok, St} ;
-    {reply, ok, St#client_st{nick = list_to_atom(Nick)}} ;
+    if St#client_st.server == '' -> 
+        {reply, ok, St#client_st{nick = list_to_atom(Nick)}} ;
+        true -> {reply, {error, user_already_connected, "Changing nick is not allowed when connected"}, St}
+    end;
 
 %% Incoming message
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->

@@ -30,13 +30,15 @@ handle(St, {connect, User}) ->
     			false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [User])},
     				{reply, ok, Updated_St}
 	end;
-handle(St, {disconnect, User, Client}) ->
+
+handle(St, {disconnect, User}) ->
 	io:fwrite("Server received: ~p~n", [User]),
 	case existsInChannels(User, St#server_st.channelList) of
 		true -> {reply, leave_channels_first, St};
-		false -> Updated_St = St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)},
+		false -> Updated_St = St#server_st{connectedUsers = lists:keydelete(User,1, St#server_st.connectedUsers)},
 			{reply, ok, Updated_St}
 	end;
+
 handle(St, {join, User, Client, Channel}) ->
 	io:fwrite("Server received: ~p~n", [Channel]), 
 	case lists:keyfind(Channel,1,St#server_st.channelList) of
@@ -47,6 +49,20 @@ handle(St, {join, User, Client, Channel}) ->
 				true -> {reply, user_already_joined, St};
 				false ->  
 					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:append(Users, [{User, Client}])})}}
+		end                       
+    end;
+
+handle(St, {leave, User, Client, Channel}) ->
+	io:fwrite("Server received: ~p~n", [Channel]),
+	CurrentChannel = lists:keyfind(Channel,1,St#server_st.channelList),
+	if  CurrentChannel == false ->
+		  {reply, channel_not_found, St};
+		 true->
+		 	{_,Users} = CurrentChannel,
+			case lists:keymember(User,1,Users) of
+			true -> {reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:delete(Users, [{User, Client}])})}};
+			false -> {reply, user_not_joined, St}
+	
 		end                       
     end;
 
@@ -68,18 +84,15 @@ handle(St, {send, User, Channel, Msg}) ->
 
 send([], Channel, User, Msg) -> ok;
 send([ClientPID|Tail], Channel, User, Msg) ->
-	io:fwrite("Test: mottagerens PID är ~p~n", [ClientPID]), %%TODO Debug
-	%% TODO lägg till if inte sändaren
 	genserver:request(ClientPID, {incoming_msg, Channel, User, Msg}),
 	send(Tail, Channel, User, Msg).
 		
 existsInChannels( Element, []) ->
 	false;
-
-existsInChannels( Element, [Item | ListTail]) ->
+existsInChannels( Element, [Item | Tail]) ->
 	{_,X} = Item,
 	case lists:member(Element, X)  of
 		true 	-> true;
-		false	-> existsInChannels(Element, ListTail)
+		false	-> existsInChannels(Element, Tail)
 	end.
 
