@@ -37,11 +37,10 @@ handle(St, {disconnect, User}) ->
 handle(St, {join, User, Channel}) ->
 	ChannelPID = whereis(Channel),
 	if ChannelPID == undefined ->
-			register(Channel, channel());
+			register(Channel, channel());	% Registers a new channel process if the channel name is not already registerred
 		true -> already_registered
 	end,
-	
-	io:fwrite("Server received: ~p~n", [Channel]), 
+	io:fwrite("Server received: ~p~n", [Channel]),  % TODO debug
 	case lists:keyfind(Channel,1,St#server_st.channelList) of
 		false ->
 		  {reply, ok, St#server_st{channelList = lists:append(St#server_st.channelList, [{Channel, [User]}])}};
@@ -49,18 +48,20 @@ handle(St, {join, User, Channel}) ->
 			case lists:member(User, Users) of
 				true -> {reply, user_already_joined, St};
 				false ->  
-
-					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:append(Users, [User])})}}
+					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, 
+						{Channel, lists:append(Users, [User])})}}
 		end                       
     end;
+
 handle(St, {leave, User, Channel}) ->
-	io:fwrite("Server received: ~p~n", [Channel]),
+	io:fwrite("Server received: ~p~n", [Channel]),	% TODO debug
 	case  lists:keyfind(Channel,1,St#server_st.channelList) of
 		false ->
 			{reply, channel_not_found, St};
 	 	{_,Users} ->
 			case lists:member(User, Users) of
-				true -> {reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, {Channel, lists:delete(User,Users)})}};
+				true -> {reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, 
+					{Channel, lists:delete(User,Users)})}};
 				false -> {reply, user_not_joined, St}
 	
 			end                       
@@ -71,17 +72,17 @@ handle(St, {msg_from_GUI, User, Channel, Msg}) ->
 		{_, Users} ->
 			case lists:member(User, Users) of
 				true -> 
-			%	io:fwrite("Server in send message: Message:  ~p~n", [Msg]),
-			%	io:fwrite("Server in send message: User:  ~p~n", [User]),
-			%	io:fwrite("Server in send message: Channel:  ~p~n", [Channel]),
-			%	io:fwrite("Server in send message: Users:  ~p~n", [Users]),
+				io:fwrite("Server in send message: Message:  ~p~n", [Msg]),	% TODO debug
+				io:fwrite("Server in send message: User:  ~p~n", [User]),	% TODO debug
+				io:fwrite("Server in send message: Channel:  ~p~n", [Channel]),	% TODO debug
+				io:fwrite("Server in send message: Users:  ~p~n", [Users]),	% TODO debug
 
-				MessageArguments = [{ClientPID, Channel, User, Msg} || {Nick, ClientPID} <- St#server_st.connectedUsers, Nick /= User, lists:member(Nick, Users)],
-				list_to_atom(Channel)!{self(), MessageArguments},
-				%pmap(fun sendMessage/1, MessageArguments),
+				MessageArguments = [{ClientPID, Channel, User, Msg} || {Nick, ClientPID} <- St#server_st.connectedUsers, 
+					Nick /= User, lists:member(Nick, Users)],
+				list_to_atom(Channel)!{send, MessageArguments},	% Send a message to the channel
 				{reply, ok, St};
 			false ->	
-				{reply, user_not_joined, St}
+				{reply, user_not_joined, St}	% The user hasn't joined a channel
 			end
 		end.
    
@@ -98,38 +99,32 @@ existsInChannels( Element, [Item | ListTail]) ->
 sendMessage({PID, Channel, User, Message}) ->
 	genserver:request(PID, {incoming_msg, Channel, User, Message}).
 
-% Channel
+% Channel code
 channel() ->
 	spawn(fun() -> 
 		channel_body() 		
 			end).
 
 channel_body() ->
-	receive{Server, MessageArguments} ->	
-		pmap(fun sendMessage/1, MessageArguments)
+	receive{send, MessageArguments} ->	
+		pmap(fun sendMessage/1, MessageArguments)	% Starts a process map based on the PIDs of the clients connected to the channel
 	end,
 	channel_body()		% An infinite loop
 	.
 
-% Map code (basically the one that's on the course webpage)
+% Map code (basically the one that's on the course webpage, but doesn't use the get/combine functions)
+	% TODO does it need to use thos functions?
 
--record(pmap_st, {tasks, aworkers, pworkers, get, combine}).
+-record(pmap_st, {tasks, aworkers, pworkers}).
 
 pmap(Function, Tasks) ->	% TODO: 4 cores = 4 workers?
    W1 = worker(Function),
    W2 = worker(Function), 
    W3 = worker(Function), 
    W4 = worker(Function), 
-   start(Tasks, [W1, W2, W3, W4], fun get_pmap/1, fun combine_pmap/2, []).
+   start(Tasks, [W1, W2, W3, W4], []).
 
-get_pmap([Task|Tasks]) -> 	% TODO: is this method necessary? 
-	{Task, Tasks}.
-
-combine_pmap(Result,Results) -> 
-	[Result|Results].	
-
-
-% Worker code (basically the one that's on the course webpage)
+% Worker code (basically the one that's on the course webpage, but doesn't use the get/combine functions)
 
 worker(Function) ->
 	spawn(fun() -> 
@@ -143,24 +138,22 @@ worker_body(Function) ->
 		worker_body(Function)		% An infinite loop
 	end.
 
-start(Tasks, Workers, Get, Combine, InitialResult) ->
+start(Tasks, Workers, InitialResult) ->
  	St = #pmap_st{tasks = Tasks,
              pworkers = Workers,
-             aworkers = [],
-             get = Get, combine = Combine},
+             aworkers = []},
     work_load(St, InitialResult).
 
 work_load(#pmap_st{tasks=[], aworkers=[]}, Results) ->		% All done
 	Results;
 
-work_load(St = #pmap_st{tasks = [NextTask|TasksLeft], pworkers = [PWorker|PWorkers], aworkers = AWorkers, get = Get}, Results) ->			% Tasks and passive workers left
-	%{NextTask, TasksLeft} = Get([NextTaskI|TasksLeftI]),  
+work_load(St = #pmap_st{tasks = [NextTask|TasksLeft], pworkers = [PWorker|PWorkers], aworkers = AWorkers}, Results) ->		% Tasks and passive workers left
 	PWorker!{self(), NextTask},
 	work_load(St#pmap_st{tasks = TasksLeft, pworkers = PWorkers, aworkers = [PWorker|AWorkers]}, Results);
 
-work_load(St = #pmap_st{pworkers = PWorkers, aworkers = AWorkers, combine = Combine}, Results) ->
+work_load(St = #pmap_st{pworkers = PWorkers, aworkers = AWorkers}, Results) ->
 	receive{WorkerPID, Result} ->
 		work_load(St#pmap_st{pworkers = [WorkerPID|PWorkers], aworkers = lists:delete(WorkerPID, AWorkers)},
-			Combine(Result, Results))
+			[Result|Results])
 	end.	
 
