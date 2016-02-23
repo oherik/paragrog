@@ -35,6 +35,12 @@ handle(St, {disconnect, User}) ->
 			{reply, ok, Updated_St}
 	end;
 handle(St, {join, User, Channel}) ->
+	ChannelPID = whereis(Channel),
+	if ChannelPID == undefined ->
+			register(Channel, channel());
+		true -> already_registered
+	end,
+	
 	io:fwrite("Server received: ~p~n", [Channel]), 
 	case lists:keyfind(Channel,1,St#server_st.channelList) of
 		false ->
@@ -71,7 +77,8 @@ handle(St, {msg_from_GUI, User, Channel, Msg}) ->
 			%	io:fwrite("Server in send message: Users:  ~p~n", [Users]),
 
 				MessageArguments = [{ClientPID, Channel, User, Msg} || {Nick, ClientPID} <- St#server_st.connectedUsers, Nick /= User, lists:member(Nick, Users)],
-				pmap(fun sendMessage/1, MessageArguments),
+				list_to_atom(Channel)!{self(), MessageArguments},
+				%pmap(fun sendMessage/1, MessageArguments),
 				{reply, ok, St};
 			false ->	
 				{reply, user_not_joined, St}
@@ -90,6 +97,19 @@ existsInChannels( Element, [Item | ListTail]) ->
 
 sendMessage({PID, Channel, User, Message}) ->
 	genserver:request(PID, {incoming_msg, Channel, User, Message}).
+
+% Channel
+channel() ->
+	spawn(fun() -> 
+		channel_body() 		
+			end).
+
+channel_body() ->
+	receive{Server, MessageArguments} ->	
+		pmap(fun sendMessage/1, MessageArguments)
+	end,
+	channel_body()		% An infinite loop
+	.
 
 % Map code (basically the one that's on the course webpage)
 
