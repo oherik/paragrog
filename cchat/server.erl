@@ -65,19 +65,19 @@ handle(St, {msg_from_GUI, User, Channel, Msg}) ->
 		{_, Users} ->
 			case lists:member(User, Users) of
 				true -> 
-				io:fwrite("Server in send message: Message:  ~p~n", [Msg]),
-				io:fwrite("Server in send message: User:  ~p~n", [User]),
-				io:fwrite("Server in send message: Channel:  ~p~n", [Channel]),
-				io:fwrite("Server in send message: Users:  ~p~n", [Users]),
+			%	io:fwrite("Server in send message: Message:  ~p~n", [Msg]),
+			%	io:fwrite("Server in send message: User:  ~p~n", [User]),
+			%	io:fwrite("Server in send message: Channel:  ~p~n", [Channel]),
+			%	io:fwrite("Server in send message: Users:  ~p~n", [Users]),
 
-				PIDs = [ClientPID || {Nick, ClientPID} <- St#server_st.connectedUsers, Nick /= User, lists:member(Nick, Users)],
-				sendMessage(PIDs, Channel, User, Msg),
+				MessageArguments = [{ClientPID, Channel, User, Msg} || {Nick, ClientPID} <- St#server_st.connectedUsers, Nick /= User, lists:member(Nick, Users)],
+				pmap(fun sendMessage/1, MessageArguments),
 				{reply, ok, St};
-				false -> {reply, user_not_joined, St}
+			false ->	
+				{reply, user_not_joined, St}
 			end
 		end.
    
-    
 existsInChannels( _, []) ->
 	false;
 
@@ -88,11 +88,59 @@ existsInChannels( Element, [Item | ListTail]) ->
 		false	-> existsInChannels(Element, ListTail)
 	end.
 
-sendMessage([PID | Tail], Channel, User, Msg) ->
-	genserver:request(PID, {incoming_msg, Channel, User, Msg}),
-	sendMessage(Tail, Channel, User, Msg);
-	
+sendMessage({PID, Channel, User, Message}) ->
+	genserver:request(PID, {incoming_msg, Channel, User, Message}).
 
-sendMessage([],_,_,_) ->
-	true.
+% Map code (basically the one that's on the course webpage)
+
+-record(pmap_st, {tasks, aworkers, pworkers, get, combine}).
+
+pmap(Function, Tasks) ->	% TODO: 4 cores = 4 workers?
+   W1 = worker(Function),
+   W2 = worker(Function), 
+   W3 = worker(Function), 
+   W4 = worker(Function), 
+   start(Tasks, [W1, W2, W3, W4], fun get_pmap/1, fun combine_pmap/2, []).
+
+get_pmap([Task|Tasks]) -> 	% TODO: is this method necessary? 
+	{Task, Tasks}.
+
+combine_pmap(Result,Results) -> 
+	[Result|Results].	
+
+
+% Worker code (basically the one that's on the course webpage)
+
+worker(Function) ->
+	spawn(fun() -> 
+		worker_body(Function) 		% Spawns a worker, which then will loop
+			end).
+
+worker_body(Function) ->
+	receive{BossPID, Argument} ->	%The worker will return its result to the boss
+		Result = Function(Argument),
+		BossPID!{self(), Result},
+		worker_body(Function)		% An infinite loop
+	end.
+
+start(Tasks, Workers, Get, Combine, InitialResult) ->
+ 	St = #pmap_st{tasks = Tasks,
+             pworkers = Workers,
+             aworkers = [],
+             get = Get, combine = Combine},
+    work_load(St, InitialResult).
+
+work_load(#pmap_st{tasks=[], aworkers=[]}, Results) ->		% All done
+	Results;
+
+work_load(St = #pmap_st{tasks = [NextTask|TasksLeft], pworkers = [PWorker|PWorkers], aworkers = AWorkers, get = Get}, Results) ->			% Tasks and passive workers left
+	%{NextTask, TasksLeft} = Get([NextTaskI|TasksLeftI]),  
+	PWorker!{self(), NextTask},
+	work_load(St#pmap_st{tasks = TasksLeft, pworkers = PWorkers, aworkers = [PWorker|AWorkers]}, Results);
+
+work_load(St = #pmap_st{pworkers = PWorkers, aworkers = AWorkers, combine = Combine}, Results) ->
+	receive{WorkerPID, Result} ->
+		work_load(St#pmap_st{pworkers = [WorkerPID|PWorkers], aworkers = lists:delete(WorkerPID, AWorkers)},
+			Combine(Result, Results))
+	end.	
 
