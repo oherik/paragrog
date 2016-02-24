@@ -78,12 +78,19 @@ public class Lab2 {
          * @return  true if the train was able to acquire the monitor, false if there was another train on the track
          */
         public boolean tryEnter() {
-            if(trainOnTrack) {
-                return false;
-            }else{
-                enter();
-                return true;
+            lock.lock();
+            try {
+                if (!trainOnTrack) {
+                    trainOnTrack = true;
+                    return true;
+                }else{
+                    return false;
+                }
+
+            }finally {
+                lock.unlock();
             }
+
         }
 
     }
