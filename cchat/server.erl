@@ -73,8 +73,10 @@ handle(St, {msg_from_GUI, User, Channel, Msg}) ->
 existsInChannels( _, []) ->
 	false;
 
-existsInChannels( Element, [Item | ListTail]) ->
-	case lists:keyfind(Element#client_st.nick, #client_st.nick, Item#channel_st.connectedUsers) of 
-		false -> existsInChannels(Element, ListTail);
+existsInChannels(User, [Channel | ListTail]) ->
+	Data = {find_user, User},
+	Response = genserver:request(Channel, Data),
+	case Response of 
+		false -> existsInChannels(User, ListTail);
 		true -> true
 	end.

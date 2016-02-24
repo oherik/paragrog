@@ -34,7 +34,11 @@ handle(St, {msg_from_GUI, User, Msg}) ->
 				{reply, ok, St};
 			false ->	
 				{reply, user_not_joined, St}	% The user hasn't joined a channel
-			end.
+			end;
+
+handle(St, {find_user, User}) ->
+	{reply, lists:member(User, St#channel_st.connectedUsers), St}.
+
 
 
 sendMessage(Client, {Channel, User, Message}) ->
