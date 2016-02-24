@@ -35,6 +35,8 @@ handle(St, {find_user, User}) ->
 	{reply, lists:member(User, St#channel_st.connectedUsers), St}.
 
 spawnMessage([],_,_,_) -> no_client;
+
 spawnMessage(Client, Channel, User, Message) -> spawn (fun () ->sendMessage(Client, Channel, User, Message) end ).
+
 sendMessage(Client, Channel, User, Message) -> 
 	genserver:request(Client#client_st.pid, {incoming_msg, Channel, User#client_st.nick, Message}).

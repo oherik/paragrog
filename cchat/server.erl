@@ -7,7 +7,7 @@
 
 % Produce initial state
 initial_state(ServerName) ->
-    #server_st{serverName = ServerName}.
+    #server_st{serverName = ServerName}. 
 
 
 %% ---------------------------------------------------------------------------
@@ -20,7 +20,7 @@ initial_state(ServerName) ->
 %% and NewState is the new state of the server.
 
 handle(St, {connect, UserState}) ->
-    io:fwrite("Server received: ~p~n", [UserState]),
+    io:fwrite("Server received in connect: ~p~n", [UserState]),
     CurrentUser = lists:keyfind(UserState#client_st.nick, #client_st.nick, St#server_st.connectedUsers),
     if CurrentUser == false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [UserState])},
     				{reply, ok, Updated_St};
@@ -28,7 +28,7 @@ handle(St, {connect, UserState}) ->
 	end;
 
 handle(St, {disconnect, UserState}) ->
-	io:fwrite("Server received: ~p~n", [UserState]),
+	io:fwrite("Server received in disconnect: ~p~n", [UserState]),
 	case existsInChannels(UserState, St#server_st.channelList) of
 		true -> {reply, leave_channels_first, St};
 		false -> Updated_St = St#server_st{connectedUsers = lists:delete(UserState, St#server_st.connectedUsers)},
@@ -36,23 +36,21 @@ handle(St, {disconnect, UserState}) ->
 	end;
 
 handle(St, {join, User, Channel}) ->
+io:fwrite("Server received in join: ~p~n", [Channel]),
 ChannelAtom = list_to_atom(Channel),
 	ChannelPID = whereis(ChannelAtom),
 	if ChannelPID == undefined ->
-			genserver:start(ChannelAtom, channel:initial_state(Channel), fun channel:handle/2),
-			NewState = St#server_st{channelList = lists:append(St#server_st.channelList, [ChannelAtom])};
-
+			genserver:start(ChannelAtom, channel:initial_state(Channel), fun channel:handle/2);		
 			% Registers a new channel process if the channel name is not already registered  
-		true -> already_registered,
-			NewState = St
+		true -> channel_already_running
 	end,
-
+	NewState = St#server_st{channelList = lists:append(St#server_st.channelList, [ChannelAtom])},  %% Kan man verkligen göra såhär?
 	Data = {join, User},
 	Response = genserver:request(list_to_atom(Channel), Data),
     {reply, Response, NewState};
 
 handle(St, {leave, User, Channel}) ->
-	io:fwrite("Server received: ~p~n", [Channel]),	% TODO debug
+	io:fwrite("Server received in leave: ~p~n", [Channel]),	% TODO debug
 	case  lists:member(list_to_atom(Channel),St#server_st.channelList) of
 		false ->
 			{reply, channel_not_found, St};
@@ -61,9 +59,12 @@ handle(St, {leave, User, Channel}) ->
 			Response = genserver:request(list_to_atom(Channel), Data),
 			{reply, Response, St}                   
     end;
+
 handle(St, {msg_from_GUI, User, Channel, Msg}) ->
+io:fwrite("Server received in msg_from_GUI as channel: ~p~n", [Channel]),
 	case lists:member(list_to_atom(Channel),St#server_st.channelList) of
-	 	false -> {reply, channel_not_found, St};
+	 	false -> 
+	 		{reply, channel_not_found, St};
 		true ->
 			Data = {msg_from_GUI, User, Msg},
 			Response = genserver:request(list_to_atom(Channel), Data),
@@ -73,7 +74,7 @@ handle(St, {msg_from_GUI, User, Channel, Msg}) ->
 existsInChannels( _, []) ->
 	false;
 
-existsInChannels(User, [Channel | ListTail]) ->
+existsInChannels(User, [Channel|ListTail]) ->
 	Data = {find_user, User},
 	Response = genserver:request(Channel, Data),
 	case Response of 
