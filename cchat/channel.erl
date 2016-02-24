@@ -10,7 +10,7 @@ handle(St, {join, User}) ->
 		false ->
 		UpdatedState = #channel_st{connectedUsers = lists:append(St#channel_st.connectedUsers, [User])},
 		  {reply, ok, UpdatedState};
-		 true ->
+		  true ->
 			{reply, user_already_joined, St}
     end;
 
@@ -20,7 +20,7 @@ handle(St, {leave, User}) ->
 			false -> {reply, user_not_joined, St}
 		end;
 
-handle(St, {msg_from_GUI, User, Channel, Msg}) ->
+handle(St, {msg_from_GUI, User, Msg}) ->
 
 			case lists:member(User, St#channel_st.connectedUsers) of
 				true -> 

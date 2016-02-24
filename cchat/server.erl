@@ -41,6 +41,7 @@ handle(St, {join, User, Channel}) ->
 		io:fwrite(Channel),
 			genserver:start(Channel, channel:initial_state(Channel), fun channel:handle/2),
 			NewState = St#server_st{channelList = lists:append(St#server_st.channelList, [Channel])};
+
 			% Registers a new channel process if the channel name is not already registered  
 		true -> already_registered,
 			NewState = St
