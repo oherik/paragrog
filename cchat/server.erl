@@ -106,54 +106,9 @@ channel() ->
 			end).
 
 channel_body() ->
-	receive{send, MessageArguments} ->	
-		pmap(fun sendMessage/1, MessageArguments)	% Starts a process map based on the PIDs of the clients connected to the channel
+	receive{send, {Pids, Channel, User, Msg}} ->
+		MessageArguments = {Channel, User, Msg},	
+		rpc:pmap(fun sendMessage/1, MessageArguments, Pids)	% Starts a process map based on the PIDs of the clients connected to the channel
 	end,
 	channel_body()		% An infinite loop
 	.
-
-% Map code (basically the one that's on the course webpage, but doesn't use the get/combine functions)
-	% TODO does it need to use thos functions?
-
--record(pmap_st, {tasks, aworkers, pworkers}).
-
-pmap(Function, Tasks) ->	% TODO: 4 cores = 4 workers?
-   W1 = worker(Function),
-   W2 = worker(Function), 
-   W3 = worker(Function), 
-   W4 = worker(Function), 
-   start(Tasks, [W1, W2, W3, W4], []).
-
-% Worker code (basically the one that's on the course webpage, but doesn't use the get/combine functions)
-
-worker(Function) ->
-	spawn(fun() -> 
-		worker_body(Function) 		% Spawns a worker, which then will loop
-			end).
-
-worker_body(Function) ->
-	receive{BossPID, Argument} ->	%The worker will return its result to the boss
-		Result = Function(Argument),
-		BossPID!{self(), Result},
-		worker_body(Function)		% An infinite loop
-	end.
-
-start(Tasks, Workers, InitialResult) ->
- 	St = #pmap_st{tasks = Tasks,
-             pworkers = Workers,
-             aworkers = []},
-    work_load(St, InitialResult).
-
-work_load(#pmap_st{tasks=[], aworkers=[]}, Results) ->		% All done
-	Results;
-
-work_load(St = #pmap_st{tasks = [NextTask|TasksLeft], pworkers = [PWorker|PWorkers], aworkers = AWorkers}, Results) ->		% Tasks and passive workers left
-	PWorker!{self(), NextTask},
-	work_load(St#pmap_st{tasks = TasksLeft, pworkers = PWorkers, aworkers = [PWorker|AWorkers]}, Results);
-
-work_load(St = #pmap_st{pworkers = PWorkers, aworkers = AWorkers}, Results) ->
-	receive{WorkerPID, Result} ->
-		work_load(St#pmap_st{pworkers = [WorkerPID|PWorkers], aworkers = lists:delete(WorkerPID, AWorkers)},
-			[Result|Results])
-	end.	
-
