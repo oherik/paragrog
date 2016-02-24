@@ -3,7 +3,6 @@
 -include_lib("./defs.hrl").
 
 initial_state(ChannelName) ->
-io:fwrite("I initial state: ~p~n", [ChannelName]),
 	#channel_st{channelName = ChannelName}.
 
 handle(St, {join, User}) ->
@@ -22,16 +21,15 @@ handle(St, {leave, User}) ->
 		end;
 
 handle(St, {msg_from_GUI, User, Msg}) ->
-io:fwrite("In top send message in channel: ~p~n", [St]),
-			case lists:member(User, St#channel_st.connectedUsers) of
-				true -> 
-				Clients = [ChannelUser || ChannelUser <- St#channel_st.connectedUsers, 
-					ChannelUser/= User],
-				rpc:pmap({channel, sendMessage}, [St#channel_st.channelName,User, Msg], Clients),
-				{reply, ok, St};
-			false ->	
-				{reply, user_not_joined, St}	% The user hasn't joined a channel
-			end;
+	case lists:member(User, St#channel_st.connectedUsers) of
+		true -> 
+		Clients = [ChannelUser || ChannelUser <- St#channel_st.connectedUsers, 
+			ChannelUser/= User],
+		rpc:pmap({channel, sendMessage}, [St#channel_st.channelName,User, Msg], Clients),
+		{reply, ok, St};
+	false ->	
+		{reply, user_not_joined, St}	% The user hasn't joined a channel
+	end;
 
 handle(St, {find_user, User}) ->
 	{reply, lists:member(User, St#channel_st.connectedUsers), St}.
