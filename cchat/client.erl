@@ -52,10 +52,10 @@ handle(St, {connect, Server}) ->
 handle(St, disconnect) ->
     Data = {disconnect, St},
     Response = if St#client_st.server == '' -> user_not_connected;
-                true -> try genserver:request(St#client_st.server, Data)
-                    catch
-                        _:_ -> server_not_reached
-                    end
+                true ->  genserver:request(St#client_st.server, Data)
+                   % catch
+                    %    _:_ -> server_not_reached
+                    %end
              end,
     Message = if Response == ok -> ok;
                 Response == leave_channels_first -> {error, leave_channels_first, "User has to leave all channels first"};

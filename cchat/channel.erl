@@ -27,6 +27,7 @@ handle(St, {msg_from_GUI, User, Msg}) ->
 
 				Pids = [ChannelUser || ChannelUser <- St#channel_st.connectedUsers, 
 					ChannelUser#client_st.nick/= User],
+					io:fwrite("In send message in channel: ~p~n", [St#channel_st.channelName]),
 					MessageArguments = {St#channel_st.channelName, User, Msg},
 				rpc:pmap(fun sendMessage/2, MessageArguments, Pids),
 				%list_to_atom(Channel)!{send, MessageArguments},	% Send a message to the channel

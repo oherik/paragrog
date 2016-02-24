@@ -21,7 +21,7 @@ initial_state(ServerName) ->
 
 handle(St, {connect, UserState}) ->
     io:fwrite("Server received: ~p~n", [UserState]),
-    CurrentUser = lists:member(UserState, St#server_st.connectedUsers),
+    CurrentUser = lists:keyfind(UserState#client_st.nick, #client_st.nick, St#server_st.connectedUsers),
     if CurrentUser == false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [UserState])},
     				{reply, ok, Updated_St};
     			true -> {reply, user_already_connected, St}
@@ -74,8 +74,7 @@ existsInChannels( _, []) ->
 	false;
 
 existsInChannels( Element, [Item | ListTail]) ->
-	{_,X} = Item,
-	case lists:member(Element, X#channel_st.connectedUsers)  of
-		true 	-> true;
-		false	-> existsInChannels(Element, ListTail)
+	case lists:keyfind(Element#client_st.nick, #client_st.nick, Item#channel_st.connectedUsers) of 
+		false -> existsInChannels(Element, ListTail);
+		true -> true
 	end.
