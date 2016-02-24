@@ -37,7 +37,7 @@ handle(St, {disconnect, User}) ->
 handle(St, {join, User, Channel}) ->
 	ChannelPID = whereis(Channel),
 	if ChannelPID == undefined ->
-			register(Channel, channel());	% Registers a new channel process if the channel name is not already registerred
+			register(Channel, channel());	% Registers a new channel process if the channel name is not already registered  TODO mutex! Eller Genserver?
 		true -> already_registered
 	end,
 	io:fwrite("Server received: ~p~n", [Channel]),  % TODO debug
@@ -133,9 +133,9 @@ worker(Function) ->
 
 worker_body(Function) ->
 	receive{BossPID, Argument} ->	%The worker will return its result to the boss
-		Result = Function(Argument),
+		Result = Function(Argument),		% TODO strunta i resultatet vid utskickning?
 		BossPID!{self(), Result},
-		worker_body(Function)		% An infinite loop
+		worker_body(Function)		% An infinite loop			
 	end.
 
 start(Tasks, Workers, InitialResult) ->
