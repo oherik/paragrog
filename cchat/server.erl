@@ -37,9 +37,9 @@ handle(St, {disconnect, UserState}) ->
 
 handle(St, {join, User, Channel}) ->
 	ChannelPID = whereis(Channel),
-	if ChannelPID == undef ->
+	if ChannelPID == undefined ->
 		io:fwrite(Channel),
-			genserver:start(Channel, client:initial_state(Channel), fun client:handle/2),
+			genserver:start(Channel, channel:initial_state(Channel), fun channel:handle/2),
 			NewState = St#server_st{channelList = lists:append(St#server_st.channelList, Channel)};
 			% Registers a new channel process if the channel name is not already registered  
 		true -> already_registered,
