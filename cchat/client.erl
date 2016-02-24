@@ -10,7 +10,8 @@ initial_state(Nick, GUIName) ->
         #client_st { 
         nick = list_to_atom(Nick),
         gui = list_to_atom(GUIName),
-        server = ''
+        server = '',
+        pid = ''
     }.
 
 %% ---------------------------------------------------------------------------
@@ -24,9 +25,11 @@ initial_state(Nick, GUIName) ->
 
 %% Connect to server
 handle(St, {connect, Server}) ->
-    Data = {connect, St#client_st.nick, self()},
+    Pid = self(),
+    Data = {connect, St#client_st{pid = Pid}},
     io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
+
     Response = try genserver:request(ServerAtom, Data)
         catch 
            _:_ -> server_not_reached
@@ -37,9 +40,11 @@ handle(St, {connect, Server}) ->
                 Response ==  server_not_reached -> {error, server_not_reached, "Server could not be reached"};
                 true -> {'EXIT', "Something went wrong"}
             end,
-    St_update = if Response == ok -> St#client_st{server = ServerAtom};
+        St_update = if Response ==  ok -> 
+                  St#client_st{server = ServerAtom, pid = Pid};
                 true -> St
             end,
+
     {reply, Message, St_update} ;
 
 %% Disconnect from server
@@ -57,9 +62,9 @@ handle(St, disconnect) ->
                 Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
                 true -> {'EXIT', "Something went wrong"}
             end,
-    St_update = if Response == ok -> St#client_st{server = ''};
+    St_update = if Response == ok -> St#client_st{server = '', pid = ''};
                  true -> St
-            end,
+                end,
     % {reply, ok, St} ;
     {reply, Message, St_update} ;
 

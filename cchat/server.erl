@@ -10,7 +10,6 @@ initial_state(ServerName) ->
     #server_st{serverName = ServerName}.
 
 
-
 %% ---------------------------------------------------------------------------
 
 %% handle/2 handles requests from clients
@@ -20,38 +19,36 @@ initial_state(ServerName) ->
 %% {reply, Reply, NewState}, where Reply is the reply to be sent to the client
 %% and NewState is the new state of the server.
 
-handle(St, {connect, User, Pid}) ->
-    io:fwrite("Server received: ~p~n", [User]),
-    CurrentUser = lists:keyfind(User, 1, St#server_st.connectedUsers),
-    if CurrentUser == false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [{User, Pid}])},
+handle(St, {connect, UserState}) ->
+    io:fwrite("Server received: ~p~n", [UserState]),
+    CurrentUser = lists:member(UserState, St#server_st.connectedUsers),
+    if CurrentUser == false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [UserState])},
     				{reply, ok, Updated_St};
     			true -> {reply, user_already_connected, St}
 	end;
-handle(St, {disconnect, User}) ->
-	io:fwrite("Server received: ~p~n", [User]),
-	case existsInChannels(User, St#server_st.channelList) of
+
+handle(St, {disconnect, UserState}) ->
+	io:fwrite("Server received: ~p~n", [UserState]),
+	case existsInChannels(UserState, St#server_st.channelList) of
 		true -> {reply, leave_channels_first, St};
-		false -> Updated_St = St#server_st{connectedUsers = lists:keydelete(User,1, St#server_st.connectedUsers)},
+		false -> Updated_St = St#server_st{connectedUsers = lists:delete(UserState, St#server_st.connectedUsers)},
 			{reply, ok, Updated_St}
 	end;
+
 handle(St, {join, User, Channel}) ->
 	ChannelPID = whereis(Channel),
-	if ChannelPID == undefined ->
-			register(Channel, channel());	% Registers a new channel process if the channel name is not already registered  TODO mutex! Eller Genserver?
-		true -> already_registered
+	if ChannelPID == undef ->
+		io:fwrite(Channel),
+			genserver:start(Channel, client:initial_state(Channel), fun client:handle/2),
+			NewState = St#server_st{channelList = lists:append(St#server_st.channelList, Channel)};
+			% Registers a new channel process if the channel name is not already registered  
+		true -> already_registered,
+			NewState = St
 	end,
-	io:fwrite("Server received: ~p~n", [Channel]),  % TODO debug
-	case lists:keyfind(Channel,1,St#server_st.channelList) of
-		false ->
-		  {reply, ok, St#server_st{channelList = lists:append(St#server_st.channelList, [{Channel, [User]}])}};
-		 {_,Users} ->
-			case lists:member(User, Users) of
-				true -> {reply, user_already_joined, St};
-				false ->  
-					{reply, ok, St#server_st{channelList = lists:keyreplace(Channel, 1, St#server_st.channelList, 
-						{Channel, lists:append(Users, [User])})}}
-		end                       
-    end;
+
+	Data = {join, User},
+	Response = genserver:request(Channel, Data),
+    {reply, Response, NewState};
 
 handle(St, {leave, User, Channel}) ->
 	io:fwrite("Server received: ~p~n", [Channel]),	% TODO debug
@@ -91,7 +88,7 @@ existsInChannels( _, []) ->
 
 existsInChannels( Element, [Item | ListTail]) ->
 	{_,X} = Item,
-	case lists:member(Element, X)  of
+	case lists:member(Element, X#channel_st.connectedUsers)  of
 		true 	-> true;
 		false	-> existsInChannels(Element, ListTail)
 	end.
