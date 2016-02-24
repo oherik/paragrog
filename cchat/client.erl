@@ -71,7 +71,7 @@ handle(St, disconnect) ->
 
 % Join channel
 handle(St, {join, Channel}) ->
-    Data = {join, St, list_to_atom(Channel)},
+    Data = {join, St, Channel},
     Response =  genserver:request(St#client_st.server, Data),
     %    catch
     %        _:_ -> server_not_reached
@@ -85,7 +85,7 @@ handle(St, {join, Channel}) ->
 
 %% Leave channel
 handle(St, {leave, Channel}) ->
-    Data = {leave, St, list_to_atom(Channel)},
+    Data = {leave, St, Channel},
     Response =  try genserver:request(St#client_st.server, Data)
       catch
           _:_ -> server_not_reached

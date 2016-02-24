@@ -36,10 +36,11 @@ handle(St, {disconnect, UserState}) ->
 	end;
 
 handle(St, {join, User, Channel}) ->
-	ChannelPID = whereis(Channel),
+ChannelAtom = list_to_atom(Channel),
+	ChannelPID = whereis(ChannelAtom),
 	if ChannelPID == undefined ->
-			genserver:start(Channel, channel:initial_state(Channel), fun channel:handle/2),
-			NewState = St#server_st{channelList = lists:append(St#server_st.channelList, [Channel])};
+			genserver:start(ChannelAtom, channel:initial_state(Channel), fun channel:handle/2),
+			NewState = St#server_st{channelList = lists:append(St#server_st.channelList, [ChannelAtom])};
 
 			% Registers a new channel process if the channel name is not already registered  
 		true -> already_registered,
@@ -47,17 +48,17 @@ handle(St, {join, User, Channel}) ->
 	end,
 
 	Data = {join, User},
-	Response = genserver:request(Channel, Data),
+	Response = genserver:request(list_to_atom(Channel), Data),
     {reply, Response, NewState};
 
 handle(St, {leave, User, Channel}) ->
 	io:fwrite("Server received: ~p~n", [Channel]),	% TODO debug
-	case  lists:member(Channel,St#server_st.channelList) of
+	case  lists:member(list_to_atom(Channel),St#server_st.channelList) of
 		false ->
 			{reply, channel_not_found, St};
 	 	true ->
 	 		Data = {leave, User},
-			Response = genserver:request(Channel, Data),
+			Response = genserver:request(list_to_atom(Channel), Data),
 			{reply, Response, St}                   
     end;
 handle(St, {msg_from_GUI, User, Channel, Msg}) ->
