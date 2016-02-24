@@ -40,16 +40,17 @@ handle(St, {connect, Server}) ->
                 Response ==  server_not_reached -> {error, server_not_reached, "Server could not be reached"};
                 true -> {'EXIT', "Something went wrong"}
             end,
-        St_update = if Response ==  ok -> 
+                St_update = if Response ==  ok -> 
                   St#client_st{server = ServerAtom, pid = Pid};
-                true -> St
+                true -> 
+                    St
             end,
 
     {reply, Message, St_update} ;
 
 %% Disconnect from server
 handle(St, disconnect) ->
-    Data = {disconnect, St#client_st.nick},
+    Data = {disconnect, St},
     Response = if St#client_st.server == '' -> user_not_connected;
                 true -> try genserver:request(St#client_st.server, Data)
                     catch
@@ -70,7 +71,7 @@ handle(St, disconnect) ->
 
 % Join channel
 handle(St, {join, Channel}) ->
-    Data = {join, St#client_st.nick, list_to_atom(Channel)},
+    Data = {join, St, list_to_atom(Channel)},
     Response =  genserver:request(St#client_st.server, Data),
     %    catch
     %        _:_ -> server_not_reached
@@ -84,7 +85,7 @@ handle(St, {join, Channel}) ->
 
 %% Leave channel
 handle(St, {leave, Channel}) ->
-    Data = {leave, St#client_st.nick, list_to_atom(Channel)},
+    Data = {leave, St, list_to_atom(Channel)},
     Response =  try genserver:request(St#client_st.server, Data)
       catch
           _:_ -> server_not_reached
@@ -99,7 +100,7 @@ handle(St, {leave, Channel}) ->
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
-   Data = {msg_from_GUI, St#client_st.nick, Channel, Msg},
+   Data = {msg_from_GUI, St, Channel, Msg},
     Response =  genserver:request(St#client_st.server, Data),
       %catch
        %   _:_ -> server_not_reached
