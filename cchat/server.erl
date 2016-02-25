@@ -29,11 +29,7 @@ handle(St, {connect, UserState}) ->
 
 handle(St, {disconnect, UserState}) ->
 	io:fwrite("Server received in disconnect: ~p~n", [UserState]),
-	case existsInChannels(UserState, St#server_st.channelList) of
-		true -> {reply, leave_channels_first, St};
-		false -> Updated_St = St#server_st{connectedUsers = lists:delete(UserState, St#server_st.connectedUsers)},
-			{reply, ok, Updated_St}
-	end;
+	{reply, ok, St#server_st{connectedUsers = lists:delete(UserState, St#server_st.connectedUsers)}};
 
 handle(St, {join, User, Channel}) ->
 io:fwrite("Server received in join: ~p~n", [Channel]),
@@ -70,14 +66,3 @@ io:fwrite("Server received in msg_from_GUI as channel: ~p~n", [Channel]),
 			Response = genserver:request(list_to_atom(Channel), Data),
 			{reply, Response, St}
 		end.
-   
-existsInChannels( _, []) ->
-	false;
-
-existsInChannels(User, [Channel|ListTail]) ->
-	Data = {find_user, User},
-	Response = genserver:request(Channel, Data),
-	case Response of 
-		false -> existsInChannels(User, ListTail);
-		true -> true
-	end.
