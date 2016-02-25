@@ -1,5 +1,5 @@
 -module(channel).
--export([handle/2, initial_state/1, sendMessage/4, spawnMessage/4]).
+-export([handle/2, initial_state/1, spawnMessage/4]).
 -include_lib("./defs.hrl").
 
 initial_state(ChannelName) ->
@@ -36,7 +36,6 @@ handle(St, {find_user, User}) ->
 
 spawnMessage([],_,_,_) -> no_client;
 
-spawnMessage(Client, Channel, User, Message) -> spawn (fun () ->sendMessage(Client, Channel, User, Message) end ).
-
-sendMessage(Client, Channel, User, Message) -> 
-	genserver:request(Client#client_st.pid, {incoming_msg, Channel, User#client_st.nick, Message}).
+spawnMessage(Client, Channel, User, Message) -> spawn (fun () ->
+genserver:request(Client#client_st.pid, {incoming_msg, Channel, User#client_st.nick, Message})
+ end ).
