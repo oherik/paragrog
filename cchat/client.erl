@@ -63,23 +63,14 @@ handle(St, {join, Channel}) ->
     
 %% Leave channel
 handle(St, {leave, Channel}) ->
-    Response =  case lists:member(list_to_atom(Channel), St#client_st.channelList) of
-         false -> user_not_joined;
-        true -> try genserver:request(St#client_st.server, {leave, St, Channel})
+    case lists:member(list_to_atom(Channel), St#client_st.channelList) of
+         false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
+         true -> try genserver:request(St#client_st.server, {leave, St, Channel}),
+            {reply, ok, St#client_st{channelList = lists:delete(list_to_atom(Channel), St#client_st.channelList)}}
                 catch
-                     _:_ -> server_not_reached
+                     _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
                 end
-            end,
-    Message = if Response == ok -> ok;
-                Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
-                Response == user_not_joined -> {error, user_not_joined, "User has not joined the channel"};
-                Response == channel_not_found -> {error, channel_not_found, "The channel does not exist"};
-                true -> {'EXIT', "Something went wrong"}
-            end,
-     St_update = if Response == ok -> St#client_st{channelList = lists:delete(list_to_atom(Channel), St#client_st.channelList)};
-                true -> St
-            end,       
-    {reply, Message, St_update};
+        end;
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
