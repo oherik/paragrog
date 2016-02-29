@@ -27,23 +27,4 @@ case lists:member(User, St#server_st.connectedUsers) of
     end;
 
 handle(St, {disconnect, User}) ->
-	{reply, ok, St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)}};
-
-handle(St, {join, User, Channel}) ->
-	ChannelAtom = list_to_atom(Channel),
-	ChannelPID = whereis(ChannelAtom),
-	if 	ChannelPID == undefined ->
-			% Register a new channel process if the channel name is not already registered  
-			genserver:start(ChannelAtom, channel:initial_state(Channel), fun channel:handle/2);		
-		true -> channel_already_running
-	end,
-    {reply,	genserver:request(ChannelAtom, {join, User}), 
-    	St#server_st{channelList = lists:append(St#server_st.channelList, [ChannelAtom])}};
-
-handle(St, {leave, User, Channel}) ->
-	case lists:member(list_to_atom(Channel),St#server_st.channelList) of
-		false ->
-			{reply, channel_not_found, St};
-	 	true ->
-			{reply, genserver:request(list_to_atom(Channel), {leave, User}), St}                   
-    end.
+	{reply, ok, St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)}}.
