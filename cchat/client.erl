@@ -31,7 +31,7 @@ handle(St, {connect, Server}) ->
                         user_already_connected ->
                             {reply, {error, user_already_connected, "A user with this nick is already connected"}, St};
                         ok->
-                            {reply, ok, St#client_st{server = list_to_atom(Server), pid = self()}}
+                            {reply, ok, St#client_st{server = list_to_atom(Server)}}
                     end
                  catch 
                     _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
@@ -44,7 +44,7 @@ handle(St, disconnect) ->
 
         St#client_st.channelList /= [] -> {reply, {error, leave_channels_first, "Leave all channels first"}, St};
         true -> try genserver:request(St#client_st.server, {disconnect, St#client_st.nick}),
-            {reply, ok, St#client_st{server = '', pid = ''}}
+            {reply, ok, St#client_st{server = ''}}
            catch
                 _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
             end
@@ -53,7 +53,7 @@ handle(St, disconnect) ->
 % Join channel
 handle(St, {join, Channel}) ->
    case lists:member(list_to_atom(Channel), St#client_st.channelList) of
-            false -> try genserver:request(St#client_st.server, {join, St, Channel}),
+            false -> try genserver:request(St#client_st.server, {join, self(), Channel}),
                 {reply, ok, St#client_st{channelList = lists:append(St#client_st.channelList, [list_to_atom(Channel)])}}
                  catch
                      _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
@@ -65,7 +65,7 @@ handle(St, {join, Channel}) ->
 handle(St, {leave, Channel}) ->
     case lists:member(list_to_atom(Channel), St#client_st.channelList) of
          false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
-         true -> try genserver:request(St#client_st.server, {leave, St, Channel}),
+         true -> try genserver:request(St#client_st.server, {leave, self(), Channel}),
             {reply, ok, St#client_st{channelList = lists:delete(list_to_atom(Channel), St#client_st.channelList)}}
                 catch
                      _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
@@ -76,7 +76,7 @@ handle(St, {leave, Channel}) ->
 handle(St, {msg_from_GUI, Channel, Msg}) ->
     case lists:member(list_to_atom(Channel), St#client_st.channelList) of
         false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
-        true -> try genserver:request(list_to_atom(Channel), {msg_from_GUI, St, Msg}),
+        true -> try genserver:request(list_to_atom(Channel), {msg_from_GUI, {St#client_st.nick, self()}, Msg}),
                     {reply, ok, St}
                 catch
                   _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
