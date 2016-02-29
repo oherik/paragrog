@@ -25,13 +25,14 @@ initial_state(Nick, GUIName) ->
 handle(St, {connect, Server}) ->
     Pid = self(),
     Data = {connect, St#client_st{pid = Pid}},
-    io:fwrite("Client is sending: ~p~n", [Data]),
     ServerAtom = list_to_atom(Server),
 
-    Response = try genserver:request(ServerAtom, Data)
-        catch 
-           _:_ -> server_not_reached
-        end,
+    Response = if St#client_st.server /= '' -> user_already_connected;
+                true ->try genserver:request(ServerAtom, Data)
+                 catch 
+                    _:_ -> server_not_reached
+                 end
+             end,
     io:fwrite("Client received: ~p~n", [Response]),
     Message = if Response == ok -> ok;
                 Response == user_already_connected -> {error, user_already_connected, "User is already connected"};
@@ -48,12 +49,10 @@ handle(St, {connect, Server}) ->
 
 %% Disconnect from server
 handle(St, disconnect) ->
-    io:fwrite("ChannelList: ~p~n", [St#client_st.channelList]),
-    Data = {disconnect, St},
     Response = if St#client_st.server == '' -> user_not_connected;
 
                 St#client_st.channelList /= [] -> leave_channels_first;
-                true -> try genserver:request(St#client_st.server, Data)
+                true -> try genserver:request(St#client_st.server, {disconnect, St})
                    catch
                         _:_ -> server_not_reached
                     end
@@ -72,10 +71,8 @@ handle(St, disconnect) ->
 
 % Join channel
 handle(St, {join, Channel}) ->
-    ChannelAtom = list_to_atom(Channel),
-    Data = {join, St, Channel},
-    Response =  case lists:member(ChannelAtom, St#client_st.channelList) of
-            false -> try genserver:request(St#client_st.server, Data)
+    Response =  case lists:member(list_to_atom(Channel), St#client_st.channelList) of
+            false -> try genserver:request(St#client_st.server, {join, St, Channel})
                  catch
                      _:_ -> server_not_reached
                 end;
@@ -88,18 +85,16 @@ handle(St, {join, Channel}) ->
                 Response == user_already_joined -> {error, user_already_joined, "User already joined the channel"};
                 true -> {'EXIT', "Something went wrong"}
             end,
-    St_update = if Response == ok -> St#client_st{channelList = lists:append(St#client_st.channelList, [ChannelAtom])};
+    St_update = if Response == ok -> St#client_st{channelList = lists:append(St#client_st.channelList, [list_to_atom(Channel)])};
                 true -> St
             end,
     {reply, Message, St_update};
 
 %% Leave channel
 handle(St, {leave, Channel}) ->
-    ChannelAtom = list_to_atom(Channel),
-    Data = {leave, St, Channel},
-    Response =  case lists:member(ChannelAtom, St#client_st.channelList) of
+    Response =  case lists:member(list_to_atom(Channel), St#client_st.channelList) of
          false -> user_not_joined;
-        true -> try genserver:request(St#client_st.server, Data)
+        true -> try genserver:request(St#client_st.server, {leave, St, Channel})
                 catch
                      _:_ -> server_not_reached
                 end
@@ -110,17 +105,16 @@ handle(St, {leave, Channel}) ->
                 Response == channel_not_found -> {error, channel_not_found, "The channel does not exist"};
                 true -> {'EXIT', "Something went wrong"}
             end,
-     St_update = if Response == ok -> St#client_st{channelList = lists:delete(ChannelAtom, St#client_st.channelList)};
+     St_update = if Response == ok -> St#client_st{channelList = lists:delete(list_to_atom(Channel), St#client_st.channelList)};
                 true -> St
             end,       
     {reply, Message, St_update};
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
-   Data = {msg_from_GUI, St, Msg},
     Response =  case lists:member(list_to_atom(Channel), St#client_st.channelList) of
                 false -> user_not_joined;
-                true -> try genserver:request(list_to_atom(Channel), Data)
+                true -> try genserver:request(list_to_atom(Channel), {msg_from_GUI, St, Msg})
            
                         catch
                           _:_ -> server_not_reached
