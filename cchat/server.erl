@@ -54,15 +54,4 @@ handle(St, {leave, User, Channel}) ->
 	 		Data = {leave, User},
 			Response = genserver:request(list_to_atom(Channel), Data),
 			{reply, Response, St}                   
-    end;
-
-handle(St, {msg_from_GUI, User, Channel, Msg}) ->
-io:fwrite("Server received in msg_from_GUI as channel: ~p~n", [Channel]),
-	case lists:member(list_to_atom(Channel),St#server_st.channelList) of
-	 	false -> 
-	 		{reply, channel_not_found, St};
-		true ->
-			Data = {msg_from_GUI, User, Msg},
-			Response = genserver:request(list_to_atom(Channel), Data),
-			{reply, Response, St}
-		end.
+    end.

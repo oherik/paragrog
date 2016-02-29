@@ -118,10 +118,10 @@ handle(St, {leave, Channel}) ->
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
-   Data = {msg_from_GUI, St, Channel, Msg},
+   Data = {msg_from_GUI, St, Msg},
     Response =  case lists:member(list_to_atom(Channel), St#client_st.channelList) of
                 false -> user_not_joined;
-                true -> try genserver:request(St#client_st.server, Data)
+                true -> try genserver:request(list_to_atom(Channel), Data)
            
                         catch
                           _:_ -> server_not_reached
@@ -130,7 +130,6 @@ handle(St, {msg_from_GUI, Channel, Msg}) ->
     Message = if Response == ok -> ok;
                 Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
                 Response == user_not_joined -> {error, user_not_joined, "User has not joined the channel"};
-                Response == channel_not_found -> {error, channel_not_found, "The channel does not exist"};
                 true -> {'EXIT', "Something went wrong"}
             end,
     {reply, Message, St};
