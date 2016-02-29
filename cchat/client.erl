@@ -80,18 +80,19 @@ handle(St, {join, Channel}) ->
         end;
     
 %% Leave channel
-% Request is sent to the server to leave the channel if the user has joined the channel. The channel is also removed from the client.
+% Request is sent to the channel to leave the channel if the user has joined the channel. The channel is also removed from the client.
 handle(St, {leave, Channel}) ->
     %Check if user has joined the channel
     case lists:member(list_to_atom(Channel), St#client_st.channelList) of
         %User has not joined channel
          false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
          %User has joined channel, request is sent to server to leave the channel and the channel is removed from the channel list in client state
-         true -> try genserver:request(St#client_st.server, {leave, self(), Channel}),
+         true -> try 
+            genserver:request(list_to_atom(atom_to_list(St#client_st.server) ++ Channel), {leave, self()}),
             {reply, ok, St#client_st{channelList = lists:delete(list_to_atom(Channel), St#client_st.channelList)}}
                 catch
                     %server could not be reached
-                    _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
+                 _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
                 end
         end;
 
