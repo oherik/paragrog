@@ -66,13 +66,12 @@ handle(St, {join, Channel}) ->
     %Check if user has already joined the channel
    case lists:member(list_to_atom(Channel), St#client_st.channelList) of
             %If user has not joined the channel, send request to server to join Channel and add channel to channel list in client state
-            false -> 
-                genserver:request(St#client_st.server, {join, self(), Channel}),
-                {reply, ok, St#client_st{channelList = lists:append(St#client_st.channelList, [list_to_atom(Channel)])}};
-               %  catch
+            false -> try genserver:request(St#client_st.server, {join, self(), Channel}),
+                {reply, ok, St#client_st{channelList = lists:append(St#client_st.channelList, [list_to_atom(Channel)])}}
+                catch
                     %Server could not be reached
-                 %    _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
-                %end;
+                     _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
+                end;
             %User has already joined the channel
             true -> {reply, {error, user_already_joined, "User already joined the channel"}, St}
         end;
@@ -85,14 +84,12 @@ handle(St, {leave, Channel}) ->
         %User has not joined channel
          false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
          %User has joined channel, request is sent to server to leave the channel and the channel is removed from the channel list in client state
-         true -> 
-         %try 
-            genserver:request(St#client_st.server, {leave, self(), Channel}),
+         true -> try genserver:request(St#client_st.server, {leave, self(), Channel}),
             {reply, ok, St#client_st{channelList = lists:delete(list_to_atom(Channel), St#client_st.channelList)}}
-               % catch
+                catch
                     %server could not be reached
-                %     _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
-                %end
+                    _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
+                end
         end;
 
 % Sending messages
