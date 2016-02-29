@@ -74,21 +74,15 @@ handle(St, {leave, Channel}) ->
 
 % Sending messages
 handle(St, {msg_from_GUI, Channel, Msg}) ->
-    Response =  case lists:member(list_to_atom(Channel), St#client_st.channelList) of
-                false -> user_not_joined;
-                true -> try genserver:request(list_to_atom(Channel), {msg_from_GUI, St, Msg})
-           
-                        catch
-                          _:_ -> server_not_reached
-                        end
-                end,
-    Message = if Response == ok -> ok;
-                Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
-                Response == user_not_joined -> {error, user_not_joined, "User has not joined the channel"};
-                true -> {'EXIT', "Something went wrong"}
-            end,
-    {reply, Message, St};
-
+    case lists:member(list_to_atom(Channel), St#client_st.channelList) of
+        false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
+        true -> try genserver:request(list_to_atom(Channel), {msg_from_GUI, St, Msg}),
+                    {reply, ok, St}
+                catch
+                  _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
+                end
+     end;
+    
 %% Get current nick
 handle(St, whoami) ->
     {reply, atom_to_list(St#client_st.nick), St} ;
