@@ -23,29 +23,14 @@ initial_state(Nick, GUIName) ->
 
 %% Connect to server
 handle(St, {connect, Server}) ->
-    Pid = self(),
-    Data = {connect, St#client_st{pid = Pid}},
-    ServerAtom = list_to_atom(Server),
-
-    Response = if St#client_st.server /= '' -> user_already_connected;
-                true ->try genserver:request(ServerAtom, Data)
+    case St#client_st.server /= '' of
+            true -> {reply, {error, user_already_connected, "User is already connected"}, St};
+            false ->try genserver:request(list_to_atom(Server), {connect, St#client_st{pid = self()}}),
+                {reply, ok, St#client_st{server = list_to_atom(Server), pid = self()}}
                  catch 
-                    _:_ -> server_not_reached
+                    _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
                  end
-             end,
-    io:fwrite("Client received: ~p~n", [Response]),
-    Message = if Response == ok -> ok;
-                Response == user_already_connected -> {error, user_already_connected, "User is already connected"};
-                Response ==  server_not_reached -> {error, server_not_reached, "Server could not be reached"};
-                true -> {'EXIT', "Something went wrong"}
-            end,
-                St_update = if Response ==  ok -> 
-                  St#client_st{server = ServerAtom, pid = Pid};
-                true -> 
-                    St
-            end,
-
-    {reply, Message, St_update} ;
+             end;
 
 %% Disconnect from server
 handle(St, disconnect) ->
