@@ -35,8 +35,8 @@ handle(St, {connect, Server}) ->
                 try 
                     case genserver:request(list_to_atom(Server), {connect, St#client_st.nick}) of
                         %A user with the same nick is already connected
-                        user_already_connected ->
-                            {reply, {error, user_already_connected, "A user with this nick is already connected"}, St};
+                        connect_registered_nick ->
+                            {reply, {error, connect_registered_nick, "A user with this nick is already connected"}, St};
                         %user is now connected to the server and server is added to client state
                         ok->
                             {reply, ok, St#client_st{server = list_to_atom(Server)}}
