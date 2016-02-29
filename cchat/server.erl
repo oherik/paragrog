@@ -19,7 +19,12 @@ initial_state(ServerName) ->
 %% and NewState is the new state of the server.
 
 handle(St, {connect, UserState}) ->
-    {reply, ok, St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [UserState])}};
+case lists:member(UserState#client_st.nick, [User#client_st.nick || User <- St#server_st.connectedUsers]) of
+	false ->
+    	{reply, ok, St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [UserState])}};
+    true ->
+    	{reply, user_already_connected,St}
+    end;
 
 handle(St, {disconnect, UserState}) ->
 	{reply, ok, St#server_st{connectedUsers = lists:delete(UserState, St#server_st.connectedUsers)}};
