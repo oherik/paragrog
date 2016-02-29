@@ -68,7 +68,6 @@ handle(St, disconnect) ->
                  true -> St
                 end,
  
-    % {reply, ok, St} ;
     {reply, Message, St_update} ;
 
 % Join channel
@@ -136,12 +135,10 @@ handle(St, {msg_from_GUI, Channel, Msg}) ->
 
 %% Get current nick
 handle(St, whoami) ->
-    % {reply, "nick", St} ;
     {reply, atom_to_list(St#client_st.nick), St} ;
 
 %% Change nick
 handle(St, {nick, Nick}) ->
-    % {reply, ok, St} ;
     if St#client_st.server == '' -> 
         {reply, ok, St#client_st{nick = list_to_atom(Nick)}} ;
         true -> {reply, {error, user_already_connected, "Changing nick is not allowed when connected"}, St}
