@@ -52,25 +52,15 @@ handle(St, disconnect) ->
 
 % Join channel
 handle(St, {join, Channel}) ->
-    Response =  case lists:member(list_to_atom(Channel), St#client_st.channelList) of
-            false -> try genserver:request(St#client_st.server, {join, St, Channel})
+   case lists:member(list_to_atom(Channel), St#client_st.channelList) of
+            false -> try genserver:request(St#client_st.server, {join, St, Channel}),
+                {reply, ok, St#client_st{channelList = lists:append(St#client_st.channelList, [list_to_atom(Channel)])}}
                  catch
-                     _:_ -> server_not_reached
+                     _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
                 end;
-            true -> user_already_joined
-        end, 
-        
-      
-    Message = if Response == ok -> ok;
-                Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
-                Response == user_already_joined -> {error, user_already_joined, "User already joined the channel"};
-                true -> {'EXIT', "Something went wrong"}
-            end,
-    St_update = if Response == ok -> St#client_st{channelList = lists:append(St#client_st.channelList, [list_to_atom(Channel)])};
-                true -> St
-            end,
-    {reply, Message, St_update};
-
+            true -> {reply, {error, user_already_joined, "User already joined the channel"}, St}
+        end;
+    
 %% Leave channel
 handle(St, {leave, Channel}) ->
     Response =  case lists:member(list_to_atom(Channel), St#client_st.channelList) of
