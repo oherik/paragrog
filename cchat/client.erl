@@ -34,25 +34,15 @@ handle(St, {connect, Server}) ->
 
 %% Disconnect from server
 handle(St, disconnect) ->
-    Response = if St#client_st.server == '' -> user_not_connected;
+    if St#client_st.server == '' -> {reply, {error, user_not_connected, "User is not connected"}, St};
 
-                St#client_st.channelList /= [] -> leave_channels_first;
-                true -> try genserver:request(St#client_st.server, {disconnect, St})
-                   catch
-                        _:_ -> server_not_reached
-                    end
-             end,
-    Message = if Response == ok -> ok;
-                Response == user_not_connected -> {error, user_not_connected, "User is not connected"};
-                Response ==  leave_channels_first -> {error, leave_channels_first, "Leave all channels first"};
-                Response == server_not_reached -> {error, server_not_reached, "Server could not be reached"};
-                true -> {'EXIT', "Something went wrong"}
-            end,
-    St_update = if Response == ok -> St#client_st{server = '', pid = ''};
-                 true -> St
-                end,
- 
-    {reply, Message, St_update} ;
+        St#client_st.channelList /= [] -> {reply, {error, leave_channels_first, "Leave all channels first"}, St};
+        true -> try genserver:request(St#client_st.server, {disconnect, St}),
+            {reply, ok, St#client_st{server = '', pid = ''}}
+           catch
+                _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
+            end
+     end;
 
 % Join channel
 handle(St, {join, Channel}) ->
