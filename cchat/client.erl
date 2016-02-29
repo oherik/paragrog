@@ -2,6 +2,9 @@
 -export([handle/2, initial_state/2]).
 -include_lib("./defs.hrl").
 
+%% We decided to do as many checks as possible on the client to avoid bottlenecks on the server. 
+%% This is why channels are saved in the client state. 
+
 %% inititial_state/2 and handle/2 are used togetger with the genserver module,
 %% explained in the lecture about Generic server.
 
@@ -100,7 +103,7 @@ handle(St, {msg_from_GUI, Channel, Msg}) ->
         false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
         %If user has joined the channel, request is sent to channel to send message.
         true -> try 
-FullChannelName = atom_to_list(St#client_st.server) ++ Channel,
+                FullChannelName = atom_to_list(St#client_st.server) ++ Channel,
                 genserver:request(list_to_atom(FullChannelName), {msg_from_GUI, St#client_st.nick, self(), Msg}),
                     {reply, ok, St}
                 catch
