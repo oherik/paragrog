@@ -25,8 +25,14 @@ initial_state(Nick, GUIName) ->
 handle(St, {connect, Server}) ->
     case St#client_st.server /= '' of
             true -> {reply, {error, user_already_connected, "User is already connected"}, St};
-            false ->try genserver:request(list_to_atom(Server), {connect, St#client_st{pid = self()}}),
-                {reply, ok, St#client_st{server = list_to_atom(Server), pid = self()}}
+            false ->
+                try 
+                    case genserver:request(list_to_atom(Server), {connect, St#client_st.nick}) of
+                        user_already_connected ->
+                            {reply, {error, user_already_connected, "A user with this nick is already connected"}, St};
+                        ok->
+                            {reply, ok, St#client_st{server = list_to_atom(Server), pid = self()}}
+                    end
                  catch 
                     _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
                  end
@@ -37,7 +43,7 @@ handle(St, disconnect) ->
     if St#client_st.server == '' -> {reply, {error, user_not_connected, "User is not connected"}, St};
 
         St#client_st.channelList /= [] -> {reply, {error, leave_channels_first, "Leave all channels first"}, St};
-        true -> try genserver:request(St#client_st.server, {disconnect, St}),
+        true -> try genserver:request(St#client_st.server, {disconnect, St#client_st.nick}),
             {reply, ok, St#client_st{server = '', pid = ''}}
            catch
                 _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
