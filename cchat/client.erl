@@ -136,7 +136,7 @@ handle(St, {nick, Nick}) ->
     if St#client_st.server == '' -> 
         {reply, ok, St#client_st{nick = list_to_atom(Nick)}} ;
         true -> {reply, {error, user_already_connected, "Changing nick is not allowed when connected"}, St}
-    end;
+    end;    
 
 %% Incoming message
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
