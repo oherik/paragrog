@@ -7,8 +7,7 @@
 
 % Produce initial state
 initial_state(ServerName) ->
-    #server_st{serverName = ServerName}. 
-
+	#server_st{serverName = ServerName}. 
 
 %% ---------------------------------------------------------------------------
 
@@ -20,32 +19,25 @@ initial_state(ServerName) ->
 %% and NewState is the new state of the server.
 
 handle(St, {connect, UserState}) ->
-    CurrentUser = lists:keyfind(UserState#client_st.nick, #client_st.nick, St#server_st.connectedUsers),
-    if CurrentUser == false -> Updated_St = St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [UserState])},
-    				{reply, ok, Updated_St};
-    	true -> {reply, user_already_connected, St}
-	end;
+    {reply, ok, St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [UserState])}};
 
 handle(St, {disconnect, UserState}) ->
 	{reply, ok, St#server_st{connectedUsers = lists:delete(UserState, St#server_st.connectedUsers)}};
 
 handle(St, {join, User, Channel}) ->
-	ChannelAtom = list_to_atom(Channel),
 	ChannelPID = whereis(ChannelAtom),
-	if ChannelPID == undefined ->
-		% Register a new channel process if the channel name is not already registered  
-		genserver:start(ChannelAtom, channel:initial_state(Channel), fun channel:handle/2);		
+	if 	ChannelPID == undefined ->
+			% Register a new channel process if the channel name is not already registered  
+			genserver:start(list_to_atom(Channel), channel:initial_state(Channel), fun channel:handle/2);		
 		true -> channel_already_running
 	end,
-	NewState = St#server_st{channelList = lists:append(St#server_st.channelList, [ChannelAtom])},  %% Kan man verkligen göra såhär?
-	Response = genserver:request(list_to_atom(Channel), {join, User}),
-    {reply, Response, NewState};
+    {reply,	genserver:request(list_to_atom(Channel), {join, User}), 
+    	St#server_st{channelList = lists:append(St#server_st.channelList, [ChannelAtom])}};
 
 handle(St, {leave, User, Channel}) ->
 	case lists:member(list_to_atom(Channel),St#server_st.channelList) of
 		false ->
 			{reply, channel_not_found, St};
 	 	true ->
-			Response = genserver:request(list_to_atom(Channel), {leave, User}),
-			{reply, Response, St}                   
+			{reply, genserver:request(list_to_atom(Channel), {leave, User}), St}                   
     end.
