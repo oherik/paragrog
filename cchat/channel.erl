@@ -12,15 +12,14 @@ handle(St, {leave, User}) ->
 	{reply, ok, St#channel_st{connectedUsers = lists:delete(User#client_st.pid, St#channel_st.connectedUsers)}};
 
 handle(St, {msg_from_GUI, User, Msg}) ->
-	PID = User#client_st.pid,
 	Clients = [ChannelUser || ChannelUser <- St#channel_st.connectedUsers, 
-		ChannelUser/= PID],
+		ChannelUser/= User#client_st.pid],
 	rpc:pmap({channel, spawnMessage}, [St#channel_st.channelName,User, Msg], Clients),
 	{reply, ok, St}.
 
 spawnMessage([],_,_,_) -> no_client;
 
 spawnMessage(Client, Channel, User, Message) -> spawn (fun () ->
-genserver:request(Client, {incoming_msg, Channel, User#client_st.nick, Message})
- end ).
+	genserver:request(Client, {incoming_msg, Channel, User#client_st.nick, Message})
+end ).
 
