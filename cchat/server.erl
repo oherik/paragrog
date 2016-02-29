@@ -18,16 +18,16 @@ initial_state(ServerName) ->
 %% {reply, Reply, NewState}, where Reply is the reply to be sent to the client
 %% and NewState is the new state of the server.
 
-handle(St, {connect, UserState}) ->
-case lists:member(UserState#client_st.nick, [User#client_st.nick || User <- St#server_st.connectedUsers]) of
+handle(St, {connect, User}) ->
+case lists:member(User, St#server_st.connectedUsers) of
 	false ->
-    	{reply, ok, St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [UserState])}};
+    	{reply, ok, St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [User])}};
     true ->
     	{reply, user_already_connected,St}
     end;
 
-handle(St, {disconnect, UserState}) ->
-	{reply, ok, St#server_st{connectedUsers = lists:delete(UserState, St#server_st.connectedUsers)}};
+handle(St, {disconnect, User}) ->
+	{reply, ok, St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)}};
 
 handle(St, {join, User, Channel}) ->
 	ChannelAtom = list_to_atom(Channel),
