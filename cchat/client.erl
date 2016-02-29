@@ -59,26 +59,20 @@ handle(St, disconnect) ->
                 _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
             end
      end;
+
 % Join channel
 % Request is sent to the server to join the channel if the user has not already joined the channel. The channel is also added to the client.
 handle(St, {join, Channel}) ->
-    ChannelAtom = list_to_atom(Channel),
     %Check if user has already joined the channel
-   case lists:member(ChannelAtom, St#client_st.channelList) of
+   case lists:member(list_to_atom(Channel), St#client_st.channelList) of
             %If user has not joined the channel, send request to server to join Channel and add channel to channel list in client state
-        false -> 
-            ChannelPID = whereis(ChannelAtom),
-            if  ChannelPID == undefined ->
-            % Register a new channel process if the channel name is not already registered  
-                genserver:start(ChannelAtom, channel:initial_state(Channel), fun channel:handle/2);     
-            true -> channel_already_running
-        end,
-        try genserver:request(ChannelAtom, {join, self()}),
-                {reply, ok, St#client_st{channelList = lists:append(St#client_st.channelList, [ChannelAtom])}}
-                 catch
+            false -> 
+                genserver:request(St#client_st.server, {join, self(), Channel}),
+                {reply, ok, St#client_st{channelList = lists:append(St#client_st.channelList, [list_to_atom(Channel)])}};
+               %  catch
                     %Server could not be reached
-                     _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
-                end;
+                 %    _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
+                %end;
             %User has already joined the channel
             true -> {reply, {error, user_already_joined, "User already joined the channel"}, St}
         end;
@@ -86,18 +80,19 @@ handle(St, {join, Channel}) ->
 %% Leave channel
 % Request is sent to the server to leave the channel if the user has joined the channel. The channel is also removed from the client.
 handle(St, {leave, Channel}) ->
-    ChannelAtom = list_to_atom(Channel),
     %Check if user has joined the channel
-    case lists:member(ChannelAtom, St#client_st.channelList) of
+    case lists:member(list_to_atom(Channel), St#client_st.channelList) of
         %User has not joined channel
          false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
          %User has joined channel, request is sent to server to leave the channel and the channel is removed from the channel list in client state
-         true -> try genserver:request(ChannelAtom, {leave, self()}),
-            {reply, ok, St#client_st{channelList = lists:delete(ChannelAtom, St#client_st.channelList)}}
-                catch
+         true -> 
+         %try 
+            genserver:request(St#client_st.server, {leave, self(), Channel}),
+            {reply, ok, St#client_st{channelList = lists:delete(list_to_atom(Channel), St#client_st.channelList)}}
+               % catch
                     %server could not be reached
-                     _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
-                end
+                %     _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
+                %end
         end;
 
 % Sending messages
@@ -107,7 +102,9 @@ handle(St, {msg_from_GUI, Channel, Msg}) ->
     case lists:member(list_to_atom(Channel), St#client_st.channelList) of
         false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
         %If user has joined the channel, request is sent to channel to send message.
-        true -> try genserver:request(list_to_atom(Channel), {msg_from_GUI, St#client_st.nick, self(), Msg}),
+        true -> try 
+FullChannelName = atom_to_list(St#client_st.server) ++ Channel,
+                genserver:request(list_to_atom(FullChannelName), {msg_from_GUI, St#client_st.nick, self(), Msg}),
                     {reply, ok, St}
                 catch
                   _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
