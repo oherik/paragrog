@@ -11,8 +11,8 @@ handle(St, {join, UserPid}) ->
 handle(St, {leave, UserPid}) ->
 	{reply, ok, St#channel_st{connectedUsers = lists:delete(UserPid, St#channel_st.connectedUsers)}};
 
-handle(St, {msg_from_GUI, {UserNick, UserPid}, Msg}) ->
-	ConnectedPids = [ConnectedPid || {ConnectedPid,_} <- St#channel_st.connectedUsers, 
+handle(St, {msg_from_GUI, UserNick, UserPid, Msg}) ->
+	ConnectedPids = [ConnectedPid || ConnectedPid <- St#channel_st.connectedUsers, 
 		ConnectedPid/= UserPid],
 	rpc:pmap({channel, spawnMessage}, [St#channel_st.channelName,UserNick, Msg], ConnectedPids),
 	{reply, ok, St}.
