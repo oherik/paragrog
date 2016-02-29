@@ -3,9 +3,11 @@
 -include_lib("./defs.hrl").
 
 %% We decided to do as many checks as possible on the client to avoid bottlenecks on the server. 
-%% This is why channels are saved in the client state. 
+%% This is why the channels the client is connected to are saved in the client state, instead of e.g.
+%% having iterate through a list in the server. This is also why the client in some instances communicate
+%% directly with the channel (altohugh via the genserver) in some instances and not via the server.
 
-%% inititial_state/2 and handle/2 are used togetger with the genserver module,
+%% initial_state/2 and handle/2 are used together with the genserver module,
 %% explained in the lecture about Generic server.
 
 %% Produce initial state
@@ -99,17 +101,18 @@ handle(St, {leave, Channel}) ->
 % Sending messages
 % A request is sent to the Channel to send the message if the user is has joined the Channel
 handle(St, {msg_from_GUI, Channel, Msg}) ->
-    %Check if user has joined the channel
+    % Check if user has joined the channel
     case lists:member(list_to_atom(Channel), St#client_st.channelList) of
         false -> {reply, {error, user_not_joined, "User has not joined the channel"}, St};
         %If user has joined the channel, request is sent to channel to send message.
-        true -> try 
+        true -> %try 
+                
                 FullChannelName = atom_to_list(St#client_st.server) ++ Channel,
                 genserver:request(list_to_atom(FullChannelName), {msg_from_GUI, St#client_st.nick, self(), Msg}),
                     {reply, ok, St}
-                catch
-                  _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
-                end
+                %catch
+                %  _:_ -> {reply, {error, server_not_reached, "Server could not be reached"}, St}
+               % end
      end;
     
 % Get current nick

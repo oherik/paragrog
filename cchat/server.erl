@@ -2,7 +2,7 @@
 -export([handle/2, initial_state/1]).
 -include_lib("./defs.hrl").
 
-%% inititial_state/2 and handle/2 are used together with the genserver module,
+%% initial_state/2 and handle/2 are used together with the genserver module,
 %% explained in the lecture about Generic server.
 
 % Produce initial state

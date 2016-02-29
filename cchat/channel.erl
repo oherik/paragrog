@@ -17,11 +17,13 @@ initial_state(ChannelName) ->
 %
 % 	Returns: a tuple consisting of 'reply', 'ok' and the updated channel state
 
-% 	Adds the user's pid to the list of connected users
+% 	Adds the user's pid to the list of connected users. The check if the user is already connected is 
+%	assumed to be handled in the client.
 handle(St, {join, UserPid}) ->
 	{reply, ok, St#channel_st{connectedUsers = lists:append(St#channel_st.connectedUsers, [UserPid])}};
 
-% 	Removes the user's pid from the list of connected users
+% 	Removes the user's pid from the list of connected users. The check if the user is connected is 
+%	assumed to be handled in the client.
 handle(St, {leave, UserPid}) ->
 	{reply, ok, St#channel_st{connectedUsers = lists:delete(UserPid, St#channel_st.connectedUsers)}};
 
@@ -30,8 +32,7 @@ handle(St, {leave, UserPid}) ->
 %	to create a pmap, which in turn starts the spawnMessage function for all the contained pids. As 
 %	additional arguments it sends the channel name, the sender's nick and the message itself
 handle(St, {msg_from_GUI, UserNick, UserPid, Message}) ->
-	ConnectedPids = [ConnectedPid || ConnectedPid <- St#channel_st.connectedUsers, 
-		ConnectedPid/= UserPid],
+	ConnectedPids = lists:delete(UserPid, St#channel_st.connectedUsers),
 	rpc:pmap({channel, spawnMessage}, [St#channel_st.channelName,UserNick, Message], ConnectedPids),
 	{reply, ok, St}.
 
