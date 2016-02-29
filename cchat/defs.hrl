@@ -10,7 +10,7 @@
 % It contains the following fields:
 %	serverName: the name of the server
 %   connectedUsers: a list of all users connected to the server
--record(server_st, {serverName, connectedUsers = [], channelList = []}).
+-record(server_st, {serverName, connectedUsers = []}).
 
 % This record defines the structure of the channel process
 % It contains the following fields:

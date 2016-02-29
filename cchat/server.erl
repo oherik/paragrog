@@ -30,23 +30,14 @@ handle(St, {disconnect, User}) ->
 	{reply, ok, St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)}};
 
 handle(St, {join, User, Channel}) ->
-	FullChannelName = St#server_st.serverName ++ Channel,
-	ChannelAtom = list_to_atom(FullChannelName),
-	ChannelPID = whereis(ChannelAtom),
+	FullChannelAlias = list_to_atom(St#server_st.serverName ++ Channel),
+	ChannelPID = whereis(FullChannelAlias),
 	if 	ChannelPID == undefined ->
 			% Register a new channel process if the channel name is not already registered  
-			genserver:start(ChannelAtom, channel:initial_state(Channel), fun channel:handle/2);		
+			genserver:start(FullChannelAlias, channel:initial_state(Channel), fun channel:handle/2);		
 		true -> channel_already_running
 	end,
-    {reply,	genserver:request(ChannelAtom, {join, User}), 
-    	St#server_st{channelList = lists:append(St#server_st.channelList, [list_to_atom(Channel)])}};
+    {reply,	genserver:request(FullChannelAlias, {join, User}),St};
 
 handle(St, {leave, User, Channel}) ->
-	FullChannelName = St#server_st.serverName ++ Channel,
-	ChannelAtom = list_to_atom(FullChannelName),
-	case lists:member(list_to_atom(Channel),St#server_st.channelList) of
-		false ->
-			{reply, channel_not_found, St};
-	 	true ->
-			{reply, genserver:request(ChannelAtom, {leave, User}), St}                   
-    end.
+	{reply, genserver:request(list_to_atom(St#server_st.serverName ++ Channel), {leave, User}), St}.
