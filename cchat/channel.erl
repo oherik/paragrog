@@ -51,5 +51,5 @@ spawnMessage([],_,_,_) -> no_client;
 %	Returns: the pid for the created process.
 spawnMessage(Client, Channel, UserNick, Message) -> spawn (fun () ->
 	genserver:request(Client, {incoming_msg, Channel, UserNick, Message})
-end ).
+end).
 
