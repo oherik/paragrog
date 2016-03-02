@@ -28,7 +28,7 @@ case lists:member(User, St#server_st.connectedUsers) of
 	false ->
     	{reply, ok, St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [User])}};
     true ->
-    	{reply, connect_registered_nick, St}
+    	{reply, user_already_connected , St}
     end;
 
 %	Arguments:
