@@ -30,7 +30,7 @@ loop(State, F) ->
 
 %% Send a request to a Pid and wait for a response
 request(Pid, Data) ->
-  request(Pid, Data, 3000).
+  request(Pid, Data, 5000).
 
 %% Send a request to a Pid and wait for a response
 %% With a specified timeout
