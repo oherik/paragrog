@@ -32,7 +32,7 @@ handle(St, {connect, Server}) ->
         %if user is not connected, send request to server
         false ->
             try 
-                case genserver:request(list_to_atom(Server), {connect, St#client_st.nick}) of
+                case genserver:request(list_to_atom(Server), {connect, St#client_st.nick, self()}) of
                 nick_taken ->      %A user with the same nick is already connected
                     {reply, {error, nick_taken , "A user with this nick is already connected"}, St};
                 ok->        %user is now connected to the server and server is added to client state
@@ -55,7 +55,7 @@ handle(St, disconnect) ->
         %Request is sent ot server to disconnect user and server is removed from client state
         true -> 
             try 
-                genserver:request(St#client_st.server, {disconnect, St#client_st.nick}),
+                genserver:request(St#client_st.server, {disconnect, St#client_st.nick, self()}),
                 {reply, ok, St#client_st{server = ''}}
            catch
                 %The server could not be reached

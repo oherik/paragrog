@@ -19,24 +19,25 @@ initial_state(ServerName) ->
 %% and NewState is the new state of the server.
 
 %	Arguments:
-%		User: the nick of the client
+%		User: {nick, pid}
 %	
 %	Adds the user's nick to the list of connected users, if it's not already connected. If it is connected,
 %	it replies with and nick_taken message.
-handle(St, {connect, User}) ->
-case lists:member(User, St#server_st.connectedUsers) of
+handle(St, {connect, UserNick, UserPid}) ->
+ConnectedNicks = [Nick || {Nick, _} <- St#server_st.connectedUsers],
+case lists:member(UserNick, ConnectedNicks) of
 	false ->
-    	{reply, ok, St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [User])}};
+    	{reply, ok, St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [{UserNick, UserPid}])}};
     true ->
-    	{reply, nick_taken , St}
+    	{reply, nick_taken, St}
     end;
 
 %	Arguments:
 %		User: the nick of the client
 %	
 %	Removes the user's nick from the list of connected users.
-handle(St, {disconnect, User}) ->
-	{reply, ok, St#server_st{connectedUsers = lists:delete(User, St#server_st.connectedUsers)}};
+handle(St, {disconnect, UserNick, UserPid}) ->
+	{reply, ok, St#server_st{connectedUsers = lists:delete({UserNick, UserPid}, St#server_st.connectedUsers)}};
 
 %	Arguments:
 %		UserPid: the connecting client's pid
