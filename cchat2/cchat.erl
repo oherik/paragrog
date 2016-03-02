@@ -23,6 +23,9 @@ start2() ->
     client(),
     client().
 
-%% Sends a job to the connected clients
+%% Sends a job to the server
 send_job(ServerString, Function, InputList) ->
+	spawn( fun() ->
+		genserver:request(list_to_atom(ServerString), {task, Function, InputList})
+	end),
 	ok.

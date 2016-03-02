@@ -65,4 +65,14 @@ handle(St, {join, UserPid, Channel}) ->
 			genserver:start(FullChannelAtom, channel:initial_state(Channel), fun channel:handle/2);		
 		true -> channel_already_running
 	end,
-    {reply,	genserver:request(FullChannelAtom, {join, UserPid}),St}.
+    {reply,	genserver:request(FullChannelAtom, {join, UserPid}),St};
+
+handle(St, {task, Function, Arguments}) ->
+	Clients = [Pid || {_,Pid} <- St#server_st.connectedUsers],
+	ok.
+
+% From the course webpage
+assign_tasks([], _) -> [] ;
+assign_tasks(Users, Tasks) ->
+  [  {lists:nth(((N-1) rem length(Users)) + 1, Users), Task}
+  || {N,Task} <- lists:zip(lists:seq(1,length(Tasks)), Tasks) ].
