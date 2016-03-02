@@ -22,13 +22,13 @@ initial_state(ServerName) ->
 %		User: the nick of the client
 %	
 %	Adds the user's nick to the list of connected users, if it's not already connected. If it is connected,
-%	it replies with and user_already_connected message.
+%	it replies with and nick_taken message.
 handle(St, {connect, User}) ->
 case lists:member(User, St#server_st.connectedUsers) of
 	false ->
     	{reply, ok, St#server_st{connectedUsers = lists:append(St#server_st.connectedUsers, [User])}};
     true ->
-    	{reply, user_already_connected , St}
+    	{reply, nick_taken , St}
     end;
 
 %	Arguments:
