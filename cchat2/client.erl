@@ -33,10 +33,8 @@ handle(St, {connect, Server}) ->
         false ->
             try 
                 case genserver:request(list_to_atom(Server), {connect, St#client_st.nick}) of
-                user_already_connected ->      %A user with the same nick is already connected
-                    % The error message will be changed to nick_taken for Lab 4 if the tests have been updated,
-                    % but in order to pass the tests for this lab user_already_connected is needed.
-                    {reply, {error, user_already_connected, "A user with this nick is already connected"}, St};
+                nick_taken ->      %A user with the same nick is already connected
+                    {reply, {error, nick_taken , "A user with this nick is already connected"}, St};
                 ok->        %user is now connected to the server and server is added to client state
                     {reply, ok, St#client_st{server = list_to_atom(Server)}}
                 end
