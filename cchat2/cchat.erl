@@ -1,6 +1,6 @@
 % Top level module
 -module(cchat).
--export([server/0,client/0,start/0,start2/0,send_job/3]).
+-export([server/0,client/0,start/0,start2/0,send_job/3,send_job_test/3]).
 -include_lib("./defs.hrl").
 
 %% Start a server
@@ -25,7 +25,12 @@ start2() ->
 
 %% Sends a job to the server
 send_job(ServerString, Function, InputList) ->
-	spawn( fun() ->
-		genserver:request(list_to_atom(ServerString), {task, Function, InputList})
-	end),
-	ok.
+	Self = self(),
+    Pids = [ spawn_link(fun() -> Self ! {self(), {send_job_test(ServerString, Function, InputList)}} end)],
+     lists:flatten( [receive {Pid, {R}} -> R   end || Pid <- Pids ])
+
+    .
+
+send_job_test(ServerString, Function, InputList) ->
+ genserver:request(list_to_atom(ServerString), {task, Function, InputList})
+.
