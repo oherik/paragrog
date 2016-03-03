@@ -136,4 +136,9 @@ handle(St, {nick, Nick}) ->
 %% Incoming message is recieved from channel and sent to the gui
 handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
     gen_server:call(GUIName, {msg_to_GUI, Channel, atom_to_list(Name)++"> "++Msg}),
-    {reply, ok, St}.
+    {reply, ok, St};
+
+handle(St, {task, {Function, Argument}}) ->
+        {reply, Function(Argument), St}
+    end.  
+
