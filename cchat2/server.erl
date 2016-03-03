@@ -69,6 +69,9 @@ handle(St, {join, UserPid, Channel}) ->
 
 handle(St, {task, Function, Arguments}) ->
 	Clients = [Pid || {_,Pid} <- St#server_st.connectedUsers],
+	Tasks = [{Function, Argument} || Argument <- Arguments],
+	TaskList = assign_tasks(Clients, Tasks),
+	
 	ok.
 
 % From the course webpage
