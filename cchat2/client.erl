@@ -138,6 +138,6 @@ handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
     gen_server:call(GUIName, {msg_to_GUI, Channel, atom_to_list(Name)++"> "++Msg}),
     {reply, ok, St};
 
-handle(St, {task, {Function, Argument}}) ->
+handle(St, {task, Function, Argument}) ->
         {reply, Function(Argument), St}.
 

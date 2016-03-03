@@ -1,6 +1,6 @@
 % Top level module
 -module(cchat).
--export([server/0,client/0,start/0,start2/0,send_job/3, sendTask/1]).
+-export([server/0,client/0,start/0,start2/0,send_job/3, sendTask/2]).
 -include_lib("./defs.hrl").
 
 %% Start a server
@@ -26,21 +26,11 @@ start2() ->
 %% Sends a job to the server
 send_job(ServerString, Function, InputList) ->
     Clients = genserver:request(list_to_atom(ServerString), get_clients),
-    Tasks = [{Function, Argument} || Argument <- InputList],
-    TaskList = assign_tasks(Clients, Tasks),
-    
-    Self = self(),
-    Send_pids = [spawn(fun() -> 
-        Self!{self(), genserver:request(Client, {task, Task})} 
-    end) || {Client ,Task} <- TaskList],
- 
+    TaskList = assign_tasks(Clients, InputList),
+    rpc:pmap({cchat, sendTask}, [Function], TaskList).
 
-   
-lists:flatten([receive {Send_pid, Response} -> 
-        Response 
-    end|| Send_pid <- Send_pids])
-
-    .
+sendTask({Client, Input}, Function) -> 
+    genserver:request(Client, {task, Function, Input}).
 
 % From the course webpage
 assign_tasks([], _) -> [] ;
@@ -49,6 +39,14 @@ assign_tasks(Users, Tasks) ->
   || {N,Task} <- lists:zip(lists:seq(1,length(Tasks)), Tasks) ].
 
 
-  sendTask({Client, Task}) -> 
-    genserver:request(Client, {task, Task}).
 
+
+%% Sends a job to the server
+%send_job(ServerString, Function, InputList) ->
+    %Clients = genserver:request(list_to_atom(ServerString), get_clients),
+    %Tasks = [{Function, Argument} || Argument <- InputList],
+    %TaskList = assign_tasks(Clients, Tasks),
+    %rpc:pmap({cchat, sendTask}, [], TaskList).
+
+%sendTask({Client, Task}) -> 
+%    genserver:request(Client, {task, Task}).
