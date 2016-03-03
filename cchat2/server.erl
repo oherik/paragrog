@@ -1,5 +1,5 @@
 -module(server).
--export([handle/2, initial_state/1]).
+-export([handle/2, initial_state/1, sendTask/1]).
 -include_lib("./defs.hrl").
 
 %% initial_state/2 and handle/2 are used together with the genserver module,
@@ -71,11 +71,16 @@ handle(St, {task, Function, Arguments}) ->
 	Clients = [Pid || {_,Pid} <- St#server_st.connectedUsers],
 	Tasks = [{Function, Argument} || Argument <- Arguments],
 	TaskList = assign_tasks(Clients, Tasks),
-	
-	ok.
+	Response = rpc:pmap({server, sendTask}, [], TaskList),
+
+	{reply, Response, St}.
 
 % From the course webpage
 assign_tasks([], _) -> [] ;
 assign_tasks(Users, Tasks) ->
   [  {lists:nth(((N-1) rem length(Users)) + 1, Users), Task}
   || {N,Task} <- lists:zip(lists:seq(1,length(Tasks)), Tasks) ].
+
+
+  sendTask({Client, Task}) -> 
+  	genserver:request(Client, {task, Task}).

@@ -139,6 +139,5 @@ handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
     {reply, ok, St};
 
 handle(St, {task, {Function, Argument}}) ->
-        {reply, Function(Argument), St}
-    end.  
+        {reply, Function(Argument), St}.
 
