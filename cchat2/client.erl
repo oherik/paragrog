@@ -138,6 +138,8 @@ handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
     gen_server:call(GUIName, {msg_to_GUI, Channel, atom_to_list(Name)++"> "++Msg}),
     {reply, ok, St};
 
+
+% A task is recieved and the result of the function Function with the argument Argument is returned. 
 handle(St, {task, {Function, Argument}}) ->
         {reply, Function(Argument), St}.
 
