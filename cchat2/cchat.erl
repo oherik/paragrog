@@ -27,6 +27,8 @@ start2() ->
 %   What it does, in order:
 %   * Gets the connected clients from the server. This is donw to keep the server busy for as short time as possible. 
 %   If the rest of the operations were made in the server module instead, waiting for results could block the server.
+%   If no server could be reached an error is printed. If no clients are connected an error is printed as well. 
+%   If no errors were found the following happens:
 %   * Creates a list of a combination of the function and all its inputs
 %   * Assigns them to a client.
 %   * Creates a list of a client, a unique reference and its task, as well as a list of just the references.
