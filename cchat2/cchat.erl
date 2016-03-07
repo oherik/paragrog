@@ -31,13 +31,24 @@ start2() ->
 %   Starts the send_to_client method for each client
 %   Collects the results
 send_job(ServerString, Function, InputList) ->
-    Clients = genserver:request(list_to_atom(ServerString), get_clients),
-    Tasks = [{Function, Argument} || Argument <- InputList],
-    TaskList = assign_tasks(Clients, Tasks),
-    ClientsAndRefs = [{Client, make_ref(), Task} || {Client, Task} <- TaskList],
-    Refs = [Ref || {_,Ref,_} <- ClientsAndRefs],
-    lists:foreach(fun send_to_client/1, ClientsAndRefs),
-    handleref([],Refs).
+    Clients = try genserver:request(list_to_atom(ServerString), get_clients)
+            catch 
+                _:_ -> server_not_reached
+            end,
+    case Clients == server_not_reached of
+        true -> "Server could not be reached";
+        false -> 
+            case length(Clients) == 0 of
+                true -> "No clients connected";
+                false ->
+                    Tasks = [{Function, Argument} || Argument <- InputList],
+                    TaskList = assign_tasks(Clients, Tasks),
+                    ClientsAndRefs = [{Client, make_ref(), Task} || {Client, Task} <- TaskList],
+                    Refs = [Ref || {_,Ref,_} <- ClientsAndRefs],
+                    lists:foreach(fun send_to_client/1, ClientsAndRefs),
+                    handleref([],Refs)
+                end
+            end.
 
 % Collects all resuls by waiting for replies from the send_to_client function
 % Refs are usid instead of the client pids to ensure that each task is put in the list in the correct order.
