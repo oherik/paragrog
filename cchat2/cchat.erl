@@ -47,9 +47,9 @@ send_job(ServerString, Function, InputList) ->
 handleref(Result, []) ->
     Result;
 handleref(Result, [Ref|Tail]) ->
-    receive {Ref, Response} ->
-        handleref(Result++[Response], Tail)
-    end.
+        receive {Ref, Response} ->
+            handleref(Result++[Response], Tail)
+        end.
 
 %   * Creates a new function which is made to send a callback using the client/task combination's unique reference once the computation
 %   has been executed and a result has been recieved.
@@ -58,7 +58,7 @@ send_to_client({Client, Ref, Task}) ->
     CchatPid = self(),
     spawn (fun () ->
         CchatPid!{Ref, 
-         genserver:request(Client, {task, Task})}
+         genserver:request(Client, {task, Task}, infinity)}
     end).
 
 % From the course webpage. Creates tuples with clients and tasks in the following manner:
