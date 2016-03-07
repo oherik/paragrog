@@ -23,13 +23,15 @@ start2() ->
     client(),
     client().
 
-%% Sends a job to the server
+%% Sends a job to the clients
 %   What it does, in order:
-%   Gets the connected clients from the server. 
-%   Creates a list of a combination of the function and all its inputs, and assigns them to a client.
-%   Creates a list of a client, a unique reference and its task, as well as a list of just the references.
-%   Starts the send_to_client method for each client
-%   Collects the results
+%   * Gets the connected clients from the server. This is donw to keep the server busy for as short time as possible. 
+%   If the rest of the operations were made in the server module instead, waiting for results could block the server.
+%   * Creates a list of a combination of the function and all its inputs
+%   * Assigns them to a client.
+%   * Creates a list of a client, a unique reference and its task, as well as a list of just the references.
+%   * Starts the send_to_client method for each client
+%   * Collects the results
 send_job(ServerString, Function, InputList) ->
     Clients = genserver:request(list_to_atom(ServerString), get_clients),
     Tasks = [{Function, Argument} || Argument <- InputList],
@@ -37,7 +39,7 @@ send_job(ServerString, Function, InputList) ->
     ClientsAndRefs = [{Client, make_ref(), Task} || {Client, Task} <- TaskList],
     Refs = [Ref || {_,Ref,_} <- ClientsAndRefs],
     lists:foreach(fun send_to_client/1, ClientsAndRefs),
-    handleref([],Refs).
+    handleref([], Refs).
 
 % Collects all resuls by waiting for replies from the send_to_client function
 % Refs are usid instead of the client pids to ensure that each task is put in the list in the correct order.
