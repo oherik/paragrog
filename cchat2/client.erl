@@ -138,7 +138,12 @@ handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
     gen_server:call(GUIName, {msg_to_GUI, Channel, atom_to_list(Name)++"> "++Msg}),
     {reply, ok, St};
 
-%   Computes a given task consisting of a function and its argument. Returns the computatin using a genserver reply.
-handle(St, {task, Function, Argument}) ->
-        {reply, Function(Argument), St}.
-
+% A task is recieved and the result of the function Function with the argument Argument is returned.
+%   If the task couldn't be completed or computed, bad_result is returned 
+handle(St, {task, {Function, Argument}}) ->
+        try
+            Result = Function(Argument),
+            {reply, Result, St}
+        catch 
+            _:_ -> {reply, bad_result, St}
+        end.
