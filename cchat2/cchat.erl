@@ -40,6 +40,7 @@ send_job(ServerString, Function, InputList) ->
     handleref([],Refs).
 
 % Collects all resuls by waiting for replies from the send_to_client function
+% Refs are usid instead of the client pids to ensure that each task is put in the list in the correct order.
 handleref(Result, []) ->
     Result;
 handleref(Result, [Ref|Tail]) ->
