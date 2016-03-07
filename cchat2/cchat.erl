@@ -55,11 +55,15 @@ send_job(ServerString, Function, InputList) ->
 % Collects all resuls by waiting for replies from the send_to_client function
 % Refs are used instead of the client pids to ensure that each task is put in the list in the correct order.
 % The order of results will be the same as the order of references, which in turn is the same order as the input list.
+% If a task couldn't be computed, the atom could_not_compute is added to the list
 handleref(Result, []) ->
     Result;
 handleref(Result, [Ref|Tail]) ->
-        receive {Ref, Response} ->
-            handleref(Result++[Response], Tail)
+        receive 
+            {Ref, bad_result} -> 
+                handleref(Result++[could_not_compute], Tail);
+            {Ref, Response} ->
+                handleref(Result++[Response], Tail)
         end.
 
 %   * Creates a new function which is made to send a callback using the client/task combination's unique reference once the computation

@@ -139,7 +139,12 @@ handle(St = #client_st { gui = GUIName }, {incoming_msg, Channel, Name, Msg}) ->
     {reply, ok, St};
 
 
-% A task is recieved and the result of the function Function with the argument Argument is returned. 
+% A task is recieved and the result of the function Function with the argument Argument is returned.
+%   If the task couldn't be completed or computed, bad_result is returned 
 handle(St, {task, {Function, Argument}}) ->
-        {reply, Function(Argument), St}.
-
+        try
+            Result = Function(Argument),
+            {reply, Result, St}
+        catch 
+            _:_ -> {reply, bad_result, St}
+        end.
