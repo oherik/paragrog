@@ -21,8 +21,8 @@ initial_state(ServerName) ->
 %	Arguments:
 %		User: {nick, pid}
 %	
-%	Adds the user's nick to the list of connected users, if it's not already connected. If it is connected,
-%	it replies with and nick_taken message.
+%	Adds the user's nick and pid to the list of connected users, if it's not already connected. If it is connected,
+%	it replies with a nick_taken message.
 handle(St, {connect, UserNick, UserPid}) ->
 ConnectedNicks = [Nick || {Nick, _} <- St#server_st.connectedUsers],
 case lists:member(UserNick, ConnectedNicks) of
@@ -33,9 +33,10 @@ case lists:member(UserNick, ConnectedNicks) of
     end;
 
 %	Arguments:
-%		User: the nick of the client
+%		UserNick: the nick of the client
+%		UserPid: the pid of the client
 %	
-%	Removes the user's nick from the list of connected users.
+%	Removes the user's nick and pid from the list of connected users.
 handle(St, {disconnect, UserNick, UserPid}) ->
 	{reply, ok, St#server_st{connectedUsers = lists:delete({UserNick, UserPid}, St#server_st.connectedUsers)}};
 
@@ -67,5 +68,7 @@ handle(St, {join, UserPid, Channel}) ->
 	end,
     {reply,	genserver:request(FullChannelAtom, {join, UserPid}),St};
 
+
+% Returns the pids of all connected clients. 
 handle(St, get_clients) ->
 	{reply, [Pid || {_,Pid} <- St#server_st.connectedUsers], St}.
