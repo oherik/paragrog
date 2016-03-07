@@ -36,7 +36,7 @@ send_job(ServerString, Function, InputList) ->
     TaskList = assign_tasks(Clients, Tasks),
     ClientsAndRefs = [{Client, make_ref(), Task} || {Client, Task} <- TaskList],
     Refs = [Ref || {_,Ref,_} <- ClientsAndRefs],
-    lists:map(fun send_to_client/1, ClientsAndRefs),
+    lists:foreach(fun send_to_client/1, ClientsAndRefs),
     handleref([],Refs).
 
 % Collects all resuls by waiting for replies from the send_to_client function
