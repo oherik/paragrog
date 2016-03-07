@@ -42,7 +42,8 @@ send_job(ServerString, Function, InputList) ->
     handleref([], Refs).
 
 % Collects all resuls by waiting for replies from the send_to_client function
-% Refs are usid instead of the client pids to ensure that each task is put in the list in the correct order.
+% Refs are used instead of the client pids to ensure that each task is put in the list in the correct order.
+% The order of results will be the same as the order of references, which in turn is the same order as the input list.
 handleref(Result, []) ->
     Result;
 handleref(Result, [Ref|Tail]) ->
@@ -50,8 +51,9 @@ handleref(Result, [Ref|Tail]) ->
         handleref(Result++[Response], Tail)
     end.
 
-%   Creates a new function which is made to send a callback using the client/task combination's unique reference 
-%   number. A request is made to the client to compute said task
+%   * Creates a new function which is made to send a callback using the client/task combination's unique reference once the computation
+%   has been executed and a result has been recieved.
+%   * A request is made to the client to compute said task.
 send_to_client({Client, Ref, Task}) ->    
     CchatPid = self(),
     spawn (fun () ->
@@ -59,7 +61,9 @@ send_to_client({Client, Ref, Task}) ->
          genserver:request(Client, {task, Task})}
     end).
 
-% From the course webpage
+% From the course webpage. Creates tuples with clients and tasks in the following manner:
+%   > assign_tasks([u1,u2],[t1,t2,t3]).
+%   [{u1,t1},{u2,t2},{u1,t3}]
 assign_tasks([], _) -> [] ;
 assign_tasks(Users, Tasks) ->
   [  {lists:nth(((N-1) rem length(Users)) + 1, Users), Task}
